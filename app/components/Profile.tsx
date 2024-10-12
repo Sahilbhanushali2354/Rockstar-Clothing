@@ -25,11 +25,11 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-signOut(auth).then(() => {
-router.push("/auth/login")
-}).catch((error) => {
-  console.log(error)
-});
+    signOut(auth).then(() => {
+      router.push("/auth/login")
+    }).catch((error) => {
+      console.log(error)
+    });
     router.push("/login");
   };
 

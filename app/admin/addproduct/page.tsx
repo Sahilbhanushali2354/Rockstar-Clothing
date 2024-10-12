@@ -1,5 +1,5 @@
 "use client";
-import {  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { auth, FStore } from "@/firebase/firebase.config";
@@ -48,7 +48,7 @@ const AddProduct = () => {
     });
     const [newFile, setNewFile] = useState<TFile>({} as TFile);
     const [subcategories, setSubcategories] = useState<string[]>([]);
-    const navigation = useRouter();   
+    const navigation = useRouter();
     const [authData, setAuthData] = useState(() => {
         if (typeof window !== "undefined") {
             const auth = localStorage.getItem("auth");
@@ -72,9 +72,12 @@ const AddProduct = () => {
 
     useEffect(() => {
         // Access localStorage only after the component has mounted
-        const auth = localStorage.getItem("auth");
-        if (auth) {
-            setAuthData(JSON.parse(auth));
+        if (typeof window !== 'undefined') {
+
+            const auth = localStorage.getItem("auth");
+            if (auth) {
+                setAuthData(JSON.parse(auth));
+            }
         }
     }, []);
 
@@ -97,7 +100,7 @@ const AddProduct = () => {
         };
 
         checkAdminRole();
-    }, [authData,categoryOptions,navigation]);
+    }, [authData, categoryOptions, navigation]);
 
     const handleLogout = () => {
         signOut(auth)

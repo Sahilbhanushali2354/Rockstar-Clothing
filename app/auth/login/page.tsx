@@ -76,7 +76,6 @@ const LoginPage: React.FC = () => {
         })
         .catch((error) => {
           setLoading(false);
-          const errorCode = error.code;
           const errorMessage = error.message;
           setErrors({ email: errorMessage }); // Display the error message
         });
@@ -153,7 +152,7 @@ const LoginPage: React.FC = () => {
 
         {/* Signup Link */}
         <p className="text-center text-gray-400 mt-6">
-          Don"t have an account?{" "}
+          Do not have an account?
           <Link href="/auth/signup" className="text-blue-500 hover:underline">
             Sign Up
           </Link>

@@ -2,6 +2,7 @@
 import { useRouter } from "next/router";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Image from "next/image";
 const ProductDetail = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -21,7 +22,7 @@ const ProductDetail = () => {
       <Navbar />
       <main className="px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <img src={product.image} alt={product.name} className="w-full h-auto rounded-md" />
+          <Image src={product.image} alt={product.name} className="w-full h-auto rounded-md" />
           <div>
             <h1 className="text-2xl font-bold">{product.name}</h1>
             <p className="text-gray-700 mt-4">${product.price}</p>

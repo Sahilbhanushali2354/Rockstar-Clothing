@@ -2,11 +2,8 @@
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { useState } from "react";
-import { Spin } from "antd";
 
 const Cart = () => {
-  const [loader, setLoader] = useState(false)
   const cartItems = [
     { id: 1, name: "Slim Fit Jeans", price: 49.99, quantity: 1 },
     { id: 2, name: "Polo T-Shirt", price: 29.99, quantity: 2 },
@@ -15,7 +12,7 @@ const Cart = () => {
   const totalAmount = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (
-    <Spin spinning={loader} className="bg-gray-900 text-white min-h-screen">
+    <div className="bg-gray-900 text-white min-h-screen">
       <Navbar />
       <main className="px-4 py-8 max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">Your Cart</h1>
@@ -38,7 +35,7 @@ const Cart = () => {
         </div>
       </main>
       <Footer />
-    </Spin>
+    </div>
   );
 };
 

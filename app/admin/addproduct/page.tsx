@@ -84,7 +84,7 @@ const AddProduct = () => {
         };
 
         checkAdminRole();
-    }, []);
+    }, [authData,categoryOptions,navigation]);
 
     const handleLogout = () => {
         signOut(auth)

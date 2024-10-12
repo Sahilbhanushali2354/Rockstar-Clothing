@@ -1,4 +1,5 @@
 "use client"
+import Image from "next/image";
 type ProductProps = {
   product: {
     id: number;
@@ -11,7 +12,7 @@ type ProductProps = {
 const ProductCard = ({ product }: ProductProps) => {
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg transform transition-transform duration-300 hover:scale-105">
-      <img
+      <Image
         src={product.image}
         alt={product.name}
         className="w-full h-48 object-cover rounded-t-lg"

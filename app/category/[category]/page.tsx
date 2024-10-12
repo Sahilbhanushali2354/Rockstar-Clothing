@@ -6,6 +6,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useParams } from "next/navigation";
 import { Spin } from "antd";
+import Image from 'next/image'
 
 interface Product {
     id: string;
@@ -70,7 +71,7 @@ const CategoryPage = () => {
                                     className="bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300"
                                 >
                                     <div className="relative">
-                                        <img
+                                        <Image
                                             src={product.file.url}
                                             alt={product.title}
                                             className="w-full h-72 object-cover rounded-lg mb-4 transition-transform transform hover:scale-105"

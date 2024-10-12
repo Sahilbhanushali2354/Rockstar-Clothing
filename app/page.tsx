@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase.config";
 import "react-toastify/dist/ReactToastify.css";
 import { Spin } from "antd";
+import Image from "next/image";
 
 export default function Home() {
   const navigation = useRouter();
@@ -36,7 +37,7 @@ export default function Home() {
             Discover the Rockstar Collection
           </h1>
           <p className="text-xl lg:text-2xl mb-10 font-light">
-            Elevate your style with our exclusive range of men"s clothing.
+            Elevate your style with our exclusive range of mens clothing.
           </p>
           <Link
             href="/shop"
@@ -56,7 +57,7 @@ export default function Home() {
           {/* Jeans */}
           <Link href="/category/jeans" onClick={() => setLoader(true)}>
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/jeans/1.jpg"
                 alt="Jeans"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"
@@ -69,7 +70,7 @@ export default function Home() {
           {/* T-shirts */}
           <Link href="/category/t_shirts">
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/sport-tshirt/1.jpg"
                 alt="T-shirts"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"
@@ -82,7 +83,7 @@ export default function Home() {
           {/* Trousers */}
           <Link href="/category/track-pants">
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/sport-trouser/1.jpg"
                 alt="Trousers"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"
@@ -93,7 +94,7 @@ export default function Home() {
           </Link>
           <Link href="/category/socks">
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/formal-socks/1.jpg"
                 alt="Trousers"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"
@@ -105,7 +106,7 @@ export default function Home() {
 
           <Link href="/category/perfumes">
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/perfumes/1.jpg"
                 alt="Trousers"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"
@@ -118,7 +119,7 @@ export default function Home() {
           {/* Shorts */}
           <Link href="/category/shorts">
             <div className="group bg-gray-800 p-6 rounded-xl hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
-              <img
+              <Image
                 src="/images/sport-shorts/1.jpg"
                 alt="Shorts"
                 className="rounded-lg mb-4 group-hover:opacity-90 transition-opacity duration-300 w-full h-auto"

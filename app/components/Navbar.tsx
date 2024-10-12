@@ -5,14 +5,12 @@ import { CiShoppingCart } from "react-icons/ci";
 import { BsChevronCompactUp } from "react-icons/bs";
 import { BiSearch } from "react-icons/bi";
 import SearchBar from "./SearchBar";
+import Image from 'next/image'
 
-type Props = {};
-
-const Navbar = (props: Props) => {
+const Navbar = () => {
   const [showProfile, setShowProfile] = useState<boolean>(false);
   const [showNav, setShowNav] = useState<boolean>(false);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  const [loader, setLoader] = useState(false)
 
 
 
@@ -21,7 +19,7 @@ const Navbar = (props: Props) => {
       <div className="flex items-center justify-between py-4 relative">
         <div className="flex items-center md:space-x-10 lg:space-x-20">
           <div className="font-semibold text-2xl text-white">
-            <Link href="/" onClick={() => setLoader(true)}>Rockstar</Link>
+            <Link href="/">Rockstar</Link>
           </div>
           <nav className="max-md:hidden">
             <ul className="flex items-center lg:space-x-10 space-x-7 opacity-70 text-[15px] text-gray-400">
@@ -79,7 +77,7 @@ const Navbar = (props: Props) => {
               onClick={() => setShowProfile(!showProfile)}
               className="relative cursor-pointer"
             >
-              <img
+              <Image
                 src="/images/user.png"
                 className="w-[35px] h-[35px] rounded-full object-cover"
                 alt="Profile"

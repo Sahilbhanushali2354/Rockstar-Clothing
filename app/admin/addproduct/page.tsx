@@ -49,15 +49,8 @@ const AddProduct = () => {
     const [newFile, setNewFile] = useState<TFile>({} as TFile);
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const navigation = useRouter();
-    const [authData, setAuthData] = useState(() => {
-        if (typeof window !== "undefined") {
-            const auth = localStorage.getItem("auth");
-            return auth ? JSON.parse(auth) : {};
-        }
-        return {}; // Fallback for SSR
-    });
+    const [authData, setAuthData] = useState({});  // Initialize empty
 
-    // Define subcategories for each category
     const categoryOptions: TCategoryoption = {
         jeans: ["straight_fit", "slim_fit", "bootcut"],
         shirts: ["casual", "formal"],
@@ -65,15 +58,14 @@ const AddProduct = () => {
         hoodies: ["zipped", "pullover"],
         track_pants: ["joggers", "sweatpants"],
         shorts: ["sport_shorts", "casual_shorts"],
-        perfumes: ["floral", "woody", "citrus"],  // Added perfume subcategories
-        undergarments: ["briefs", "boxers", "thermal"],  // Added undergarments subcategories
-        socks: ["ankle", "crew", "knee_high"],  // Added socks subcategories
+        perfumes: ["floral", "woody", "citrus"],
+        undergarments: ["briefs", "boxers", "thermal"],
+        socks: ["ankle", "crew", "knee_high"],
     };
 
     useEffect(() => {
-        // Access localStorage only after the component has mounted
+        // Access localStorage after the component has mounted
         if (typeof window !== 'undefined') {
-
             const auth = localStorage.getItem("auth");
             if (auth) {
                 setAuthData(JSON.parse(auth));
@@ -83,37 +75,39 @@ const AddProduct = () => {
 
     useEffect(() => {
         const checkAdminRole = async () => {
-            if (authData) {
-                const userDoc = await getDoc(doc(FStore, "users", authData.id));
+            if (authData && "id" in authData) {
+                const userDoc = await getDoc(doc(FStore, "users", authData.id as string));
                 const userData = userDoc.data();
 
                 if (userData?.role === "admin") {
                     setIsAdmin(true);
                     setSubcategories(categoryOptions["jeans"]);
                 } else {
-                    navigation.push("/"); // Redirect non-admins to the homepage
+                    navigation.push("/");  // Redirect non-admins to the homepage
                 }
             } else {
-                navigation.push("/auth/login"); // Redirect to login if not authenticated
+                navigation.push("/auth/login");  // Redirect to login if not authenticated
             }
             setLoading(false);
         };
 
-        checkAdminRole();
+        if (Object.keys(authData).length > 0) { // Ensure authData is set before checking admin role
+            checkAdminRole();
+        }
     }, [authData, categoryOptions, navigation]);
 
     const handleLogout = () => {
         if (typeof window !== 'undefined') {
-
-        signOut(auth)
-            .then(() => {
-                localStorage.removeItem("auth");
-                navigation.push("/auth/login");
-            })
-            .catch((error) => {
-                console.error("Error during logout:", error);
-            });
-        }    };
+            signOut(auth)
+                .then(() => {
+                    localStorage.removeItem("auth");
+                    navigation.push("/auth/login");
+                })
+                .catch((error) => {
+                    console.error("Error during logout:", error);
+                });
+        }
+    };
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -123,7 +117,6 @@ const AddProduct = () => {
             [name]: value,
         }));
 
-        // Update subcategory options when the category changes
         if (name === "category") {
             const categoryValue = value as keyof TCategoryoption;
             setSubcategories(categoryOptions[categoryValue] || []);
@@ -134,8 +127,6 @@ const AddProduct = () => {
             }));
         }
     };
-
-
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files && e.target.files[0];
@@ -167,7 +158,7 @@ const AddProduct = () => {
             await addDoc(categoryCollectionRef, productData);
 
             alert("Product added successfully to the " + formData.category + " collection!");
-            setLoading(false)
+            setLoading(false);
 
             setFormData({
                 file: null,

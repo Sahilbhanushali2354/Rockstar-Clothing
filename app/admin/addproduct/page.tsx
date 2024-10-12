@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { auth, FStore } from "@/firebase/firebase.config";
@@ -35,9 +35,9 @@ interface TFormData {
     price: string,
 }
 
-interface TAuthData {
-    email: string,
-    id: string
+interface TAuthData { 
+    email:string,
+    id:string
 }
 const AddProduct = () => {
     const [loading, setLoading] = useState(true);
@@ -52,9 +52,14 @@ const AddProduct = () => {
     });
     const [newFile, setNewFile] = useState<TFile>({} as TFile);
     const [subcategories, setSubcategories] = useState<string[]>([]);
-    const navigation = useRouter();
-    const [authData, setAuthData] = useState<TAuthData>({} as TAuthData);
-
+    const navigation = useRouter();   
+    const [authData, setAuthData] = useState(() => {
+        if (typeof window !== "undefined") {
+            const auth = localStorage.getItem("auth");
+            return auth ? JSON.parse(auth) : {};
+        }
+        return {}; // Fallback for SSR
+    });
 
     // Define subcategories for each category
     const categoryOptions: TCategoryoption = {
@@ -71,7 +76,7 @@ const AddProduct = () => {
 
     useEffect(() => {
         // Access localStorage only after the component has mounted
-        const auth = window.localStorage.getItem("auth");
+        const auth = localStorage.getItem("auth");
         if (auth) {
             setAuthData(JSON.parse(auth));
         }
@@ -96,12 +101,12 @@ const AddProduct = () => {
         };
 
         checkAdminRole();
-    }, [authData, categoryOptions, navigation]);
+    }, [authData,categoryOptions,navigation]);
 
     const handleLogout = () => {
         signOut(auth)
             .then(() => {
-                window.localStorage.removeItem("auth");
+                localStorage.removeItem("auth");
                 navigation.push("/auth/login");
             })
             .catch((error) => {

@@ -38,13 +38,11 @@ const LoginPage: React.FC = () => {
 
     if (!validateEmail(email)) {
       setLoading(false);
-
       newErrors.email = "Please enter a valid email address.";
     }
 
     if (password.length < 6) {
       setLoading(false);
-
       newErrors.password = "Password must be at least 6 characters long.";
     }
 
@@ -52,10 +50,14 @@ const LoginPage: React.FC = () => {
       signInWithEmailAndPassword(auth, email, password)
         .then(async (userCredential) => {
           const user = userCredential.user;
-          window.localStorage.setItem(
-            "auth",
-            JSON.stringify({ email: user.email, id: user.uid })
-          );
+
+          if (typeof window !== "undefined") {
+            // Check if localStorage is available (client-side only)
+            localStorage.setItem(
+              "auth",
+              JSON.stringify({ email: user.email, id: user.uid })
+            );
+          }
 
           const userDoc = await getDoc(doc(FStore, "users", user.uid));
           console.log("---------------id", user.uid);
@@ -70,9 +72,6 @@ const LoginPage: React.FC = () => {
             }
             setLoading(false);
           }
-
-          // navigation.push("/");
-          // setLoading(false)
         })
         .catch((error) => {
           setLoading(false);
@@ -83,6 +82,7 @@ const LoginPage: React.FC = () => {
       setErrors(newErrors);
     }
   };
+
 
   return (
     <Spin
@@ -108,9 +108,8 @@ const LoginPage: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-3 rounded-lg border-2 ${
-                errors.email ? "border-red-500" : "border-gray-700"
-              } bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+              className={`w-full px-4 py-3 rounded-lg border-2 ${errors.email ? "border-red-500" : "border-gray-700"
+                } bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
               placeholder="Enter Your Email"
             />
             {errors.email && (
@@ -131,9 +130,8 @@ const LoginPage: React.FC = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-3 rounded-lg border-2 ${
-                errors.password ? "border-red-500" : "border-gray-700"
-              } bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+              className={`w-full px-4 py-3 rounded-lg border-2 ${errors.password ? "border-red-500" : "border-gray-700"
+                } bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
               placeholder="Enter your password"
             />
             {errors.password && (

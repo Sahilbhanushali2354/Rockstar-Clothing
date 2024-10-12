@@ -71,7 +71,7 @@ const AddProduct = () => {
 
     useEffect(() => {
         // Access localStorage only after the component has mounted
-        const auth = localStorage.getItem("auth");
+        const auth = window.localStorage.getItem("auth");
         if (auth) {
             setAuthData(JSON.parse(auth));
         }
@@ -101,7 +101,7 @@ const AddProduct = () => {
     const handleLogout = () => {
         signOut(auth)
             .then(() => {
-                localStorage.removeItem("auth");
+                window.localStorage.removeItem("auth");
                 navigation.push("/auth/login");
             })
             .catch((error) => {

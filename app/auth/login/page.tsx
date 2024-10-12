@@ -52,7 +52,7 @@ const LoginPage: React.FC = () => {
       signInWithEmailAndPassword(auth, email, password)
         .then(async (userCredential) => {
           const user = userCredential.user;
-          localStorage.setItem(
+          window.localStorage.setItem(
             "auth",
             JSON.stringify({ email: user.email, id: user.uid })
           );

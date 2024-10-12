@@ -6,7 +6,6 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
-import { Spin } from "antd";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");

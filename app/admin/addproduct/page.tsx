@@ -35,10 +35,6 @@ interface TFormData {
     price: string,
 }
 
-interface TAuthData { 
-    email:string,
-    id:string
-}
 const AddProduct = () => {
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);

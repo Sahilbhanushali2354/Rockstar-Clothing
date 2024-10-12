@@ -1,5 +1,5 @@
 "use client";
-import {  useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, collection, addDoc } from "firebase/firestore";
 import { auth, FStore } from "@/firebase/firebase.config";
@@ -35,6 +35,10 @@ interface TFormData {
     price: string,
 }
 
+interface TAuthData {
+    email: string,
+    id: string
+}
 const AddProduct = () => {
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -49,7 +53,8 @@ const AddProduct = () => {
     const [newFile, setNewFile] = useState<TFile>({} as TFile);
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const navigation = useRouter();
-    const authData = JSON.parse(localStorage.getItem("auth") ?? "");
+    const [authData, setAuthData] = useState<TAuthData>({} as TAuthData);
+
 
     // Define subcategories for each category
     const categoryOptions: TCategoryoption = {
@@ -65,10 +70,17 @@ const AddProduct = () => {
     };
 
     useEffect(() => {
+        // Access localStorage only after the component has mounted
+        const auth = localStorage.getItem("auth");
+        if (auth) {
+            setAuthData(JSON.parse(auth));
+        }
+    }, []);
+
+    useEffect(() => {
         const checkAdminRole = async () => {
-            const user = authData;
-            if (user) {
-                const userDoc = await getDoc(doc(FStore, "users", user.id));
+            if (authData) {
+                const userDoc = await getDoc(doc(FStore, "users", authData.id));
                 const userData = userDoc.data();
 
                 if (userData?.role === "admin") {
@@ -84,7 +96,7 @@ const AddProduct = () => {
         };
 
         checkAdminRole();
-    }, [authData,categoryOptions,navigation]);
+    }, [authData, categoryOptions, navigation]);
 
     const handleLogout = () => {
         signOut(auth)

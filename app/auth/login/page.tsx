@@ -14,7 +14,6 @@ const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
-  const [loading, setLoading] = useState(false); // State for loading
   const navigation = useRouter();
 
   useEffect(() => {
@@ -82,8 +81,7 @@ const LoginPage: React.FC = () => {
 
 
   return (
-    <Spin
-      spinning={loading}
+    <div
       className="w-[100%] min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800"
     >
       <div className="w-full max-w-lg mx-auto bg-gray-800 p-10 rounded-3xl shadow-2xl transition-transform transform hover:scale-105 duration-500">
@@ -153,7 +151,7 @@ const LoginPage: React.FC = () => {
           </Link>
         </p>
       </div>
-    </Spin>
+    </div>
   );
 };
 

@@ -32,54 +32,60 @@ const LoginPage: React.FC = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    setLoading(true);
-    e.preventDefault();
-    const newErrors: { email?: string; password?: string } = {};
+    if (typeof window !== "undefined") {
 
-    if (!validateEmail(email)) {
-      setLoading(false);
-      newErrors.email = "Please enter a valid email address.";
-    }
+      setLoading(true);
+      e.preventDefault();
+      const newErrors: { email?: string; password?: string } = {};
 
-    if (password.length < 6) {
-      setLoading(false);
-      newErrors.password = "Password must be at least 6 characters long.";
-    }
+      if (!validateEmail(email)) {
+        setLoading(false);
+        newErrors.email = "Please enter a valid email address.";
+      }
 
-    if (Object.keys(newErrors).length === 0) {
-      signInWithEmailAndPassword(auth, email, password)
-        .then(async (userCredential) => {
-          const user = userCredential.user;
+      if (password.length < 6) {
+        setLoading(false);
+        newErrors.password = "Password must be at least 6 characters long.";
+      }
 
-          if (typeof window !== "undefined") {
-            // Check if localStorage is available (client-side only)
-            localStorage.setItem(
-              "auth",
-              JSON.stringify({ email: user.email, id: user.uid })
-            );
-          }
+      if (Object.keys(newErrors).length === 0) {
+        signInWithEmailAndPassword(auth, email, password)
+          .then(async (userCredential) => {
+            const user = userCredential.user;
 
-          const userDoc = await getDoc(doc(FStore, "users", user.uid));
-          console.log("---------------id", user.uid);
+            if (typeof window !== "undefined") {
 
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
 
-            if (userData.role == "admin") {
-              navigation.push("/admin");
-            } else {
-              navigation.push("/");
+              // Check if localStorage is available (client-side only)
+              localStorage.setItem(
+                "auth",
+                JSON.stringify({ email: user.email, id: user.uid })
+              )
             }
+
+
+            const userDoc = await getDoc(doc(FStore, "users", user.uid));
+            console.log("---------------id", user.uid);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+
+              if (userData.role == "admin") {
+                navigation.push("/admin");
+              } else {
+                navigation.push("/");
+              }
+              setLoading(false);
+            }
+          })
+          .catch((error) => {
             setLoading(false);
-          }
-        })
-        .catch((error) => {
-          setLoading(false);
-          const errorMessage = error.message;
-          setErrors({ email: errorMessage }); // Display the error message
-        });
-    } else {
-      setErrors(newErrors);
+            const errorMessage = error.message;
+            setErrors({ email: errorMessage }); // Display the error message
+          });
+      } else {
+        setErrors(newErrors);
+      }
     }
   };
 

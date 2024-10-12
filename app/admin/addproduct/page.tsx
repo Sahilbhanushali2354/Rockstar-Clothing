@@ -103,6 +103,8 @@ const AddProduct = () => {
     }, [authData, categoryOptions, navigation]);
 
     const handleLogout = () => {
+        if (typeof window !== 'undefined') {
+
         signOut(auth)
             .then(() => {
                 localStorage.removeItem("auth");
@@ -111,7 +113,7 @@ const AddProduct = () => {
             .catch((error) => {
                 console.error("Error during logout:", error);
             });
-    };
+        }    };
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

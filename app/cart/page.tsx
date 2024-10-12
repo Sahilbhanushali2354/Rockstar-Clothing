@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { useState } from 'react';
-import { Spin } from 'antd';
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import { useState } from "react";
+import { Spin } from "antd";
 
 const Cart = () => {
   const [loader, setLoader] = useState(false)
   const cartItems = [
-    { id: 1, name: 'Slim Fit Jeans', price: 49.99, quantity: 1 },
-    { id: 2, name: 'Polo T-Shirt', price: 29.99, quantity: 2 },
+    { id: 1, name: "Slim Fit Jeans", price: 49.99, quantity: 1 },
+    { id: 2, name: "Polo T-Shirt", price: 29.99, quantity: 2 },
   ];
 
   const totalAmount = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);

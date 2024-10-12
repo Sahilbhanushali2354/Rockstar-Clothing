@@ -1,4 +1,3 @@
-// app/pages/profile.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -27,7 +26,7 @@ const Profile = () => {
 
   const handleLogout = () => {
 signOut(auth).then(() => {
-router.push('/auth/login')
+router.push("/auth/login")
 }).catch((error) => {
   console.log(error)
 });

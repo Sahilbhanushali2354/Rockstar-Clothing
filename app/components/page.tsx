@@ -1,4 +1,4 @@
-'use client'
+"use client"
 const page = () =>{
 return(
     <div>Welcome to rockstar</div>

@@ -1,7 +1,7 @@
-'use-client'
+"use-client"
 
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Checkout = () => {
   // const [loader,setLoader] = useState(false)

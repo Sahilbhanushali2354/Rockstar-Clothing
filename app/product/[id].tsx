@@ -1,19 +1,19 @@
 "use-client"
-import { useRouter } from 'next/router';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { useRouter } from "next/router";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 const ProductDetail = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  // Fetch product data based on the ID (for now, let's use a placeholder)
+  // Fetch product data based on the ID (for now, let"s use a placeholder)
   const product = {
     id,
-    name: 'Slim Fit Jeans',
-    description: 'Stylish and comfortable slim fit jeans.',
+    name: "Slim Fit Jeans",
+    description: "Stylish and comfortable slim fit jeans.",
     price: 49.99,
-    sizes: ['S', 'M', 'L', 'XL'],
-    image: '/images/jeans.jpg',
+    sizes: ["S", "M", "L", "XL"],
+    image: "/images/jeans.jpg",
   };
 
   return (

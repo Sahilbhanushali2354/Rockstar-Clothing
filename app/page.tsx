@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase.config";
-import 'react-toastify/dist/ReactToastify.css';
-import Loader from "./components/Loader";
+import "react-toastify/dist/ReactToastify.css";
 import { Spin } from "antd";
 
 export default function Home() {
@@ -24,7 +23,7 @@ export default function Home() {
     return () => x();
   }, [navigation]);
 
- 
+
   return (
     <Spin spinning={loader} className="w-full min-h-screen bg-gray-900 text-white">
       {/* Navbar */}
@@ -37,7 +36,7 @@ export default function Home() {
             Discover the Rockstar Collection
           </h1>
           <p className="text-xl lg:text-2xl mb-10 font-light">
-            Elevate your style with our exclusive range of men's clothing.
+            Elevate your style with our exclusive range of men"s clothing.
           </p>
           <Link
             href="/shop"

@@ -1,14 +1,11 @@
-// pages/admin.tsx
-'use client';
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Spin } from 'antd';
+"use client";
+import React, { useState } from "react";
+import Link from "next/link";
 
 const AdminDashboard = () => {
-    const [loading, setLoading] = useState(false);
 
     return (
-        <Spin spinning={loading} className="w-full min-h-screen bg-gray-900 text-white p-10">
+        <div className="w-full min-h-screen bg-gray-900 text-white p-10">
             <h1 className="text-4xl font-bold text-center mb-10">Admin Dashboard</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -60,7 +57,7 @@ const AdminDashboard = () => {
 
 
             </div>
-        </Spin>
+        </div>
     );
 };
 

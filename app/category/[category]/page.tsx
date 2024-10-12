@@ -1,11 +1,11 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { FStore } from '@/firebase/firebase.config';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import { useParams } from 'next/navigation';
-import { Spin } from 'antd';
+"use client";
+import { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { FStore } from "@/firebase/firebase.config";
+import Navbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
+import { useParams } from "next/navigation";
+import { Spin } from "antd";
 
 interface Product {
     id: string;
@@ -22,7 +22,7 @@ const CategoryPage = () => {
     const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
     const router = useParams();
-    const { category }: any = router;
+    const { category } = router as { category: string };
 
     // Fetch products from Firebase based on category
     useEffect(() => {
@@ -39,7 +39,7 @@ const CategoryPage = () => {
                 setLoading(false)
             } catch (error) {
                 setLoading(false)
-                console.error('Error fetching products:', error);
+                console.error("Error fetching products:", error);
             } finally {
                 setLoading(false);
             }

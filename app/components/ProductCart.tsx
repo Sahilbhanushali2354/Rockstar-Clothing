@@ -1,4 +1,3 @@
-// components/ProductCard.tsx
 "use client"
 type ProductProps = {
   product: {

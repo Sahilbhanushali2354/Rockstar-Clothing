@@ -1,12 +1,13 @@
-'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, collection, addDoc } from 'firebase/firestore';
-import { auth, FStore } from '@/firebase/firebase.config';
-import { signOut } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL, getStorage } from 'firebase/storage';
-import Loader from '../../components/Loader';
-import { Spin } from 'antd';
+"use client";
+import {  useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { auth, FStore } from "@/firebase/firebase.config";
+import { signOut } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL, getStorage } from "firebase/storage";
+import Loader from "../../components/Loader";
+import { Spin } from "antd";
+import { ChangeEvent } from "react";
 
 interface TFile {
     name: string;
@@ -39,79 +40,88 @@ const AddProduct = () => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [formData, setFormData] = useState<TFormData>({
         file: null,
-        category: 'jeans',
-        subcategory: '',
-        title: '',
-        description: '',
-        price: '',
+        category: "jeans",
+        subcategory: "",
+        title: "",
+        description: "",
+        price: "",
     });
     const [newFile, setNewFile] = useState<TFile>({} as TFile);
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const navigation = useRouter();
-    const authData = JSON.parse(localStorage.getItem('auth') ?? '');
+    const authData = JSON.parse(localStorage.getItem("auth") ?? "");
 
     // Define subcategories for each category
     const categoryOptions: TCategoryoption = {
-        jeans: ['straight_fit', 'slim_fit', 'bootcut'],
-        shirts: ['casual', 'formal'],
-        t_shirts: ['round_neck', 'v_neck', 'polo'],
-        hoodies: ['zipped', 'pullover'],
-        track_pants: ['joggers', 'sweatpants'],
-        shorts: ['sport_shorts', 'casual_shorts'],
-        perfumes: ['floral', 'woody', 'citrus'],  // Added perfume subcategories
-        undergarments: ['briefs', 'boxers', 'thermal'],  // Added undergarments subcategories
-        socks: ['ankle', 'crew', 'knee_high'],  // Added socks subcategories
+        jeans: ["straight_fit", "slim_fit", "bootcut"],
+        shirts: ["casual", "formal"],
+        t_shirts: ["round_neck", "v_neck", "polo"],
+        hoodies: ["zipped", "pullover"],
+        track_pants: ["joggers", "sweatpants"],
+        shorts: ["sport_shorts", "casual_shorts"],
+        perfumes: ["floral", "woody", "citrus"],  // Added perfume subcategories
+        undergarments: ["briefs", "boxers", "thermal"],  // Added undergarments subcategories
+        socks: ["ankle", "crew", "knee_high"],  // Added socks subcategories
     };
 
     useEffect(() => {
         const checkAdminRole = async () => {
             const user = authData;
             if (user) {
-                const userDoc = await getDoc(doc(FStore, 'users', user.id));
+                const userDoc = await getDoc(doc(FStore, "users", user.id));
                 const userData = userDoc.data();
 
-                if (userData?.role === 'admin') {
+                if (userData?.role === "admin") {
                     setIsAdmin(true);
-                    setSubcategories(categoryOptions['jeans']);
+                    setSubcategories(categoryOptions["jeans"]);
                 } else {
-                    navigation.push('/'); // Redirect non-admins to the homepage
+                    navigation.push("/"); // Redirect non-admins to the homepage
                 }
             } else {
-                navigation.push('/auth/login'); // Redirect to login if not authenticated
+                navigation.push("/auth/login"); // Redirect to login if not authenticated
             }
             setLoading(false);
         };
 
         checkAdminRole();
-    }, [navigation]);
+    }, []);
 
     const handleLogout = () => {
         signOut(auth)
             .then(() => {
-                localStorage.removeItem('auth');
-                navigation.push('/auth/login');
+                localStorage.removeItem("auth");
+                navigation.push("/auth/login");
             })
             .catch((error) => {
-                console.error('Error during logout:', error);
+                console.error("Error during logout:", error);
             });
     };
 
-    const handleInputChange = (e: any) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
 
-        // Update subcategory options when category changes
-        if (name === 'category') {
-            const categoryValue = value as keyof TCategoryoption;  // Explicitly define 'value' as a key of TCategoryoption
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
 
+        // Update subcategory options when the category changes
+        if (name === "category") {
+            const categoryValue = value as keyof TCategoryoption;
             setSubcategories(categoryOptions[categoryValue] || []);
-            setFormData({ ...formData, category: value, subcategory: '' });
+            setFormData((prevData) => ({
+                ...prevData,
+                category: value,
+                subcategory: "",
+            }));
         }
     };
 
-    const handleFileChange = (e: any) => {
-        const files = e.target.files[0];
-        setNewFile(files);
+
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files && e.target.files[0];
+        setNewFile(files ?? {} as TFile);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -119,11 +129,11 @@ const AddProduct = () => {
         setLoading(true);
 
         try {
-            let fileURL = '';
+            let fileURL = "";
             const storage = getStorage();
             const storageRef = ref(storage, `uploads/${formData.category}/${newFile.name}`);
-            const metaData = { contentType: newFile.type as any };
-            await uploadBytes(storageRef, newFile as any, metaData);
+            const metaData = { contentType: newFile.type as string };
+            await uploadBytes(storageRef, newFile as File, metaData);
             fileURL = await getDownloadURL(storageRef);
 
             const productData = {
@@ -138,20 +148,20 @@ const AddProduct = () => {
             const categoryCollectionRef = collection(FStore, formData.category);
             await addDoc(categoryCollectionRef, productData);
 
-            alert('Product added successfully to the ' + formData.category + ' collection!');
+            alert("Product added successfully to the " + formData.category + " collection!");
             setLoading(false)
 
             setFormData({
                 file: null,
-                category: 'jeans',
-                subcategory: '',
-                title: '',
-                description: '',
-                price: '',
+                category: "jeans",
+                subcategory: "",
+                title: "",
+                description: "",
+                price: "",
             });
         } catch (error) {
-            console.error('Error adding product:', error);
-            alert('Failed to add product. Please try again.');
+            console.error("Error adding product:", error);
+            alert("Failed to add product. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -166,7 +176,7 @@ const AddProduct = () => {
     }
 
     return (
-        <Spin className='min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-10 text-white' spinning={loading}>
+        <Spin className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-10 text-white" spinning={loading}>
             <div className="max-w-3xl mx-auto bg-gray-800 rounded-lg shadow-lg p-8">
                 <h2 className="text-4xl font-bold text-center mb-10">Add Products</h2>
                 <form onSubmit={handleSubmit}>

@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Images now live in Cloudinary. Firebase Storage stays readable so legacy
+// image links keep working, but nothing new can be uploaded here.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,76 @@
+rules_version = '2';
+
+// DOPAMINE CLUB — Firestore security rules.
+// Deploy: Firebase console → Firestore → Rules (paste), or `firebase deploy --only firestore:rules`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Products: anyone can read LIVE products; admins can read/write everything.
+    // Storefront queries must include where('active', '==', true).
+    match /products/{productId} {
+      allow read: if resource.data.active == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Categories: public read, admin write.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Storefront settings (announcements, hero copy, Instagram):
+    // public read, admin write.
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Users: customers create/edit their own profile from signup, but the
+    // role is locked to "customer" — only admins (or the console) can grant
+    // "admin", so nobody can promote themselves.
+    //
+    // Passwords live ONLY in Firebase Authentication (hashed). Any write that
+    // tries to put a password-like field in a profile is rejected — even by
+    // admins.
+    match /users/{userId} {
+      function isSelf() {
+        return signedIn() && request.auth.uid == userId;
+      }
+
+      function noSecrets() {
+        return !request.resource.data.keys().hasAny(
+          ['password', 'confirmPassword', 'passwordHash', 'pass', 'pwd']
+        );
+      }
+
+      allow read: if isSelf() || isAdmin();
+      allow create: if noSecrets() &&
+        ((isSelf() && request.resource.data.role == 'customer') || isAdmin());
+      allow update: if noSecrets() &&
+        ((isSelf() && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Orders (Phase 2 checkout): anyone may create, only admins may read/change.
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Legacy per-category collections (jeans, t_shirts, …): read-only for
+    // admins until you delete them after migrating.
+    match /{legacyCollection}/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

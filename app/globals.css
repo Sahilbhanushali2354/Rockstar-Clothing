@@ -2,9 +2,264 @@
 @tailwind components;
 @tailwind utilities;
 
-/* globals.css */
+/* =========================================================
+   DOPAMINE CLUB
+   Colour values are NOT defined here. They live in
+   app/theme/tokens.ts and are rendered as --dc-* variables
+   in <head> by app/layout.tsx (light on :root, dark on .dark).
+
+   Available: --dc-ink --dc-acid --dc-acid-deep --dc-paper
+   --dc-danger --dc-whatsapp --dc-bg --dc-surface --dc-surface-2
+   --dc-text --dc-muted --dc-line --dc-edge --dc-accent
+   --dc-on-accent --dc-inverse-bg --dc-inverse-text
+   --dc-inverse-accent
+   ========================================================= */
+
 body {
-  @apply bg-gradient-to-br from-gray-900 via-gray-800 to-black;
   min-height: 100vh;
   margin: 0;
+  background: var(--dc-bg);
+  color: var(--dc-text);
+}
+
+@layer components {
+  /* ---------- Buttons ---------- */
+  .btn-brutal {
+    @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-5 font-extrabold uppercase tracking-wide no-underline transition-[transform,box-shadow,opacity] duration-100;
+    min-height: 52px;
+    border: 2px solid var(--dc-edge);
+    box-shadow: 4px 4px 0 var(--dc-edge);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-brutal:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--dc-edge);
+  }
+  .btn-brutal:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 var(--dc-edge);
+  }
+  .btn-brutal:focus-visible,
+  .btn:focus-visible {
+    outline: 3px solid var(--dc-edge);
+    outline-offset: 3px;
+  }
+  .btn-brutal:disabled,
+  .btn-brutal[aria-disabled="true"] {
+    @apply cursor-not-allowed opacity-50;
+    transform: none;
+    box-shadow: 4px 4px 0 var(--dc-edge);
+  }
+
+  .btn-whatsapp,
+  .btn-primary {
+    background: var(--dc-acid);
+    color: var(--dc-ink);
+  }
+  .btn-whatsapp svg {
+    color: var(--dc-ink);
+  }
+  .btn-ink {
+    background: var(--dc-text);
+    color: var(--dc-bg);
+  }
+  .btn-danger {
+    background: var(--dc-danger);
+    color: #fff;
+  }
+  .btn-sm {
+    min-height: 40px;
+    @apply px-3.5 text-xs;
+    box-shadow: 3px 3px 0 var(--dc-edge);
+  }
+  .btn-sm:hover {
+    box-shadow: 4px 4px 0 var(--dc-edge);
+  }
+
+  /* Quiet secondary button (no brutal shadow) */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-sm font-bold no-underline transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+    min-height: 40px;
+    border: 1.5px solid var(--dc-line);
+    background: var(--dc-surface);
+    color: var(--dc-text);
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--dc-edge);
+  }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--dc-surface-2);
+    border-color: transparent;
+  }
+  .btn-danger-soft {
+    color: var(--dc-danger);
+  }
+  .btn-danger-soft:hover:not(:disabled) {
+    border-color: var(--dc-danger);
+  }
+
+  /* ---------- Surfaces ---------- */
+  .dc-card {
+    @apply rounded-xl;
+    background: var(--dc-surface);
+    border: 1px solid var(--dc-line);
+  }
+  .dc-card-brutal {
+    @apply rounded-xl;
+    background: var(--dc-surface);
+    border: 2px solid var(--dc-edge);
+    box-shadow: 6px 6px 0 var(--dc-edge);
+  }
+
+  /* ---------- Forms ---------- */
+  .dc-label {
+    @apply mb-1.5 block text-sm font-bold;
+    color: var(--dc-text);
+  }
+  .dc-help {
+    @apply mt-1.5 text-xs;
+    color: var(--dc-muted);
+  }
+  .dc-error {
+    @apply mt-1.5 text-xs font-semibold;
+    color: var(--dc-danger);
+  }
+  .dc-input {
+    @apply w-full rounded-lg px-3.5 text-sm outline-none transition-[border-color,box-shadow] duration-150;
+    min-height: 44px;
+    background: var(--dc-surface);
+    color: var(--dc-text);
+    border: 2px solid var(--dc-line);
+  }
+  textarea.dc-input {
+    @apply py-2.5;
+  }
+  .dc-input::placeholder {
+    color: var(--dc-muted);
+    opacity: 0.7;
+  }
+  .dc-input:focus {
+    border-color: var(--dc-edge);
+    box-shadow: 3px 3px 0 var(--dc-acid);
+  }
+  .dc-input[aria-invalid="true"] {
+    border-color: var(--dc-danger);
+  }
+
+  /* ---------- Badges ---------- */
+  .dc-badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide;
+    border: 1.5px solid var(--dc-edge);
+    background: var(--dc-surface);
+    color: var(--dc-text);
+  }
+  /* acid fill — live / in stock / positive */
+  .dc-badge-live {
+    background: var(--dc-acid);
+    color: var(--dc-ink);
+    border-color: var(--dc-ink);
+  }
+  /* inverted fill — sold out / featured / admin */
+  .dc-badge-ink {
+    background: var(--dc-text);
+    color: var(--dc-bg);
+    border-color: var(--dc-text);
+  }
+  /* outline — low stock / neutral info */
+  .dc-badge-outline {
+    background: transparent;
+  }
+  .dc-badge-muted {
+    border-color: var(--dc-line);
+    color: var(--dc-muted);
+  }
+
+  .text-muted {
+    color: var(--dc-muted);
+  }
+  .border-line {
+    border-color: var(--dc-line);
+  }
+  .bg-surface {
+    background: var(--dc-surface);
+  }
+  .bg-surface-2 {
+    background: var(--dc-surface-2);
+  }
+
+  /* ---------- Brand marks ---------- */
+  /* Acid block behind a word — same treatment as "CLUB" in the logo. */
+  .dc-highlight {
+    @apply inline-block rounded-md px-2 leading-[1.05];
+    background: var(--dc-acid);
+    color: var(--dc-ink);
+    border: 2px solid var(--dc-ink);
+    box-shadow: 3px 3px 0 var(--dc-ink);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  /* Loud two-tone block: ink in light mode, acid in dark mode. */
+  .dc-inverse {
+    background: var(--dc-inverse-bg);
+    color: var(--dc-inverse-text);
+  }
+  .dc-inverse .dc-highlight {
+    border-color: var(--dc-inverse-text);
+    box-shadow: 3px 3px 0 var(--dc-inverse-text);
+  }
+
+  /* Infinite scrolling ticker. Duplicate the children once for a seamless loop. */
+  .dc-marquee {
+    @apply flex w-max;
+    animation: dc-marquee 28s linear infinite;
+  }
+  .dc-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  /* ---------- Sticky mobile CTA (storefront) ---------- */
+  .sticky-cta {
+    @apply fixed inset-x-0 bottom-0 z-[1200] flex items-center gap-3 px-4 pt-3;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: var(--dc-surface);
+    color: var(--dc-text);
+    border-top: 2px solid var(--dc-edge);
+  }
+  .sticky-cta .btn-brutal {
+    border-color: var(--dc-ink);
+    box-shadow: 4px 4px 0 var(--dc-ink);
+  }
+
+  /* Reserve room under page content for .sticky-cta (constant height) */
+  .sticky-cta-spacer {
+    height: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 768px) {
+    .sticky-cta-spacer {
+      display: none;
+    }
+  }
+}
+
+/* Toasts (react-toastify) in brand style */
+.Toastify__toast {
+  border: 2px solid var(--dc-edge) !important;
+  box-shadow: 4px 4px 0 var(--dc-edge) !important;
+  border-radius: 10px !important;
+  background: var(--dc-surface) !important;
+  color: var(--dc-text) !important;
+  font-weight: 600;
+}
+
+@keyframes dc-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc-marquee { animation: none; }
 }

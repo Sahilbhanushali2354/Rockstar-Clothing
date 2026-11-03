@@ -1,190 +1,166 @@
 "use client";
 
-import React, { ChangeEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Spin } from "antd";
+import { Suspense, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
-const Signup = () => {
+import { auth, FStore } from "@/firebase/firebase.config";
+import { Field } from "@/app/components/ui";
+import PasswordInput from "@/app/components/PasswordInput";
+import Loader from "@/app/components/Loader";
+import { authErrorMessage, isValidEmail, safeRedirect } from "../authErrors";
+
+type Values = { name: string; email: string; phone: string; password: string };
+type Errors = Partial<Record<keyof Values | "form", string>>;
+
+function SignupForm() {
   const router = useRouter();
+  const redirect = useSearchParams().get("redirect");
 
-  // State for form fields
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
-    address: "",
-    password: "",
-  });
+  const [values, setValues] = useState<Values>({ name: "", email: "", phone: "", password: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  // State for errors
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [loading, setLoading] = useState<boolean>(false);
-
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setErrors({ ...errors, [name]: "" }); // Clear error on change
+  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setValues((current) => ({
+      ...current,
+      [name]: name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value,
+    }));
+    setErrors((current) => ({ ...current, [name]: undefined, form: undefined }));
   };
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-    const phoneRegex = /^[0-9]{10}$/; // Basic phone number validation (10 digits)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation
-
-    if (!formData.firstName) newErrors.firstName = "First name is required.";
-    if (!formData.lastName) newErrors.lastName = "Last name is required.";
-    if (!formData.email || !emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address.";
-    }
-    if (!formData.phoneNumber || !phoneRegex.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = "Please enter a valid phone number.";
-    }
-    if (!formData.address) newErrors.address = "Address is required.";
-    if (formData.password.length < 5) {
-      newErrors.password = "Password must be at least 6 characters long.";
-    }
-
-    return newErrors;
+  const validate = () => {
+    const next: Errors = {};
+    if (!values.name.trim()) next.name = "Tell us your name.";
+    if (!isValidEmail(values.email)) next.email = "Enter a valid email address.";
+    if (!/^[6-9]\d{9}$/.test(values.phone)) next.phone = "Enter a 10-digit Indian mobile number.";
+    if (values.password.length < 6) next.password = "Use at least 6 characters.";
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    setLoading(true)
-    e.preventDefault();
-    const validationErrors = validateForm();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (submitting || !validate()) return;
 
-    if (Object.keys(validationErrors).length === 0) {
-      // Implement Firebase signup logic here
+    setSubmitting(true);
+    try {
+      const { user } = await createUserWithEmailAndPassword(auth, values.email.trim(), values.password);
+      await updateProfile(user, { displayName: values.name.trim() });
 
-      // After successful signup, redirect
-      setLoading(false)
-      router.push("/login"); // Redirect to login page
-    } else {
-      setLoading(false)
-      setErrors(validationErrors);
+      // Customer profile. Role is always "customer" — firestore.rules
+      // blocks anyone from creating themselves as admin.
+      await setDoc(doc(FStore, "users", user.uid), {
+        name: values.name.trim(),
+        email: user.email,
+        phone: values.phone,
+        role: "customer",
+        createdAt: serverTimestamp(),
+      });
+
+      router.replace(safeRedirect(redirect, "/"));
+    } catch (error) {
+      setErrors({ form: authErrorMessage(error) });
+      setSubmitting(false);
     }
   };
 
   return (
-    <Spin spinning={loading} className="bg-gray-900 text-white min-h-screen flex flex-col w-full">
-      <main className="flex-grow flex items-center justify-center">
-        <div className="bg-gray-800 text-white p-8 rounded-lg shadow-lg w-full max-w-md mx-4 transition-transform transform hover:scale-105 duration-500">
-          <h2 className="text-3xl font-bold text-center mb-6">
-            Create an Account
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex space-x-4">
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="First Name"
-                required
-                className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                  errors.firstName ? "border-red-500" : "border-gray-600"
-                } transition duration-300`}
-              />
-              {errors.firstName && (
-                <p className="text-red-500 text-xs">{errors.firstName}</p>
-              )}
+    <div className="dc-card-brutal p-6 sm:p-8">
+      <h1 className="font-display text-3xl font-bold tracking-tight">Join the club</h1>
+      <p className="mt-1 text-sm text-muted">Save your wishlist and get first dibs on new drops.</p>
 
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Last Name"
-                required
-                className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                  errors.lastName ? "border-red-500" : "border-gray-600"
-                } transition duration-300`}
-              />
-              {errors.lastName && (
-                <p className="text-red-500 text-xs">{errors.lastName}</p>
-              )}
-            </div>
+      {errors.form && (
+        <p role="alert" className="mt-5 rounded-lg p-3 text-sm font-semibold text-white" style={{ background: "var(--dc-danger)" }}>
+          {errors.form}
+        </p>
+      )}
 
+      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+        <Field label="Name" htmlFor="name" error={errors.name}>
+          <input
+            id="name"
+            name="name"
+            autoComplete="name"
+            value={values.name}
+            onChange={onChange}
+            placeholder="Your name"
+            aria-invalid={Boolean(errors.name)}
+            className="dc-input"
+          />
+        </Field>
+
+        <Field label="Email" htmlFor="email" error={errors.email}>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={values.email}
+            onChange={onChange}
+            placeholder="you@example.com"
+            aria-invalid={Boolean(errors.email)}
+            className="dc-input"
+          />
+        </Field>
+
+        <Field label="WhatsApp number" htmlFor="phone" error={errors.phone} help="We'll confirm your orders here.">
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">+91</span>
             <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email"
-              required
-              className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                errors.email ? "border-red-500" : "border-gray-600"
-              } transition duration-300`}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs">{errors.email}</p>
-            )}
-
-            <input
+              id="phone"
+              name="phone"
               type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              placeholder="Phone Number"
-              required
-              className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                errors.phoneNumber ? "border-red-500" : "border-gray-600"
-              } transition duration-300`}
+              inputMode="numeric"
+              autoComplete="tel-national"
+              value={values.phone}
+              onChange={onChange}
+              placeholder="98765 43210"
+              aria-invalid={Boolean(errors.phone)}
+              className="dc-input pl-12"
             />
-            {errors.phoneNumber && (
-              <p className="text-red-500 text-xs">{errors.phoneNumber}</p>
-            )}
+          </div>
+        </Field>
 
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Address"
-              required
-              className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                errors.address ? "border-red-500" : "border-gray-600"
-              } transition duration-300`}
-            />
-            {errors.address && (
-              <p className="text-red-500 text-xs">{errors.address}</p>
-            )}
+        <Field label="Password" htmlFor="password" error={errors.password} help="At least 6 characters.">
+          <PasswordInput
+            id="password"
+            name="password"
+            autoComplete="new-password"
+            value={values.password}
+            onChange={onChange}
+            placeholder="••••••••"
+            aria-invalid={Boolean(errors.password)}
+          />
+        </Field>
 
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Password"
-              required
-              className={`bg-gray-700 text-white p-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-600 w-full ${
-                errors.password ? "border-red-500" : "border-gray-600"
-              } transition duration-300`}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-xs">{errors.password}</p>
-            )}
+        <button type="submit" disabled={submitting} className="btn-brutal btn-primary w-full">
+          {submitting ? "Creating account…" : "Create account"}
+        </button>
+      </form>
 
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 transition duration-200 py-2 rounded-full w-full shadow-lg transform hover:scale-105"
-            >
-              Sign Up
-            </button>
-          </form>
-
-          {/* Back to Login Button */}
-          <button
-            onClick={() => router.push("/auth/login")}
-            className="mt-4 text-blue-400 hover:underline transition duration-300"
-          >
-            Back to Login
-          </button>
-        </div>
-      </main>
-    </Spin>
+      <p className="mt-6 text-center text-sm text-muted">
+        Already a member?{" "}
+        <Link
+          href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"}
+          className="font-bold underline"
+          style={{ color: "var(--dc-text)" }}
+        >
+          Log in
+        </Link>
+      </p>
+    </div>
   );
-};
+}
 
-export default Signup;
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <SignupForm />
+    </Suspense>
+  );
+}

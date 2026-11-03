@@ -156,6 +156,15 @@ export default function StoreSettingsPage() {
                 />
               </div>
             </Field>
+            <Field label="Facebook page URL" htmlFor="facebookUrl" help="Full link starting with https://. Shown in the footer.">
+              <input
+                id="facebookUrl"
+                type="url"
+                value={form.facebookUrl}
+                onChange={(e) => set("facebookUrl", e.target.value.trim())}
+                className="dc-input"
+              />
+            </Field>
             <Field label="Tagline" htmlFor="tagline" help="Footer text and the default description for search/share previews.">
               <textarea id="tagline" rows={2} value={form.tagline} onChange={(e) => set("tagline", e.target.value)} className="dc-input resize-y" />
             </Field>

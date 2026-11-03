@@ -17,6 +17,8 @@ export interface StoreSettings {
   heroHighlight: string;
   heroSubtitle: string;
   instagramHandle: string;
+  /** full Facebook page URL */
+  facebookUrl: string;
   /** shown in footer + used for SEO description */
   tagline: string;
 }
@@ -30,6 +32,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   heroSubtitle:
     "Streetwear, co-ord sets & graphic tees that go viral. Pick your fit, order on WhatsApp, pay via UPI.",
   instagramHandle: "dopamineclub",
+  facebookUrl: "https://www.facebook.com/people/Dopamine-Club/61595935542338/",
   tagline: "Trending streetwear, co-ord sets, graphic tees & viral drops. Order straight on WhatsApp.",
 };
 
@@ -44,6 +47,12 @@ const cleanText = (value: unknown, fallback: string) => {
   return text || fallback;
 };
 
+/* Only accept http(s) links so a bad value can't become a javascript: href. */
+const cleanUrl = (value: unknown, fallback: string) => {
+  const text = cleanText(value, fallback);
+  return /^https?:\/\//i.test(text) ? text : fallback;
+};
+
 export function normalizeSettings(data: Record<string, unknown> | null | undefined): StoreSettings {
   const d = data ?? {};
   return {
@@ -54,6 +63,7 @@ export function normalizeSettings(data: Record<string, unknown> | null | undefin
     heroHighlight: cleanText(d.heroHighlight, DEFAULT_SETTINGS.heroHighlight),
     heroSubtitle: cleanText(d.heroSubtitle, DEFAULT_SETTINGS.heroSubtitle),
     instagramHandle: cleanText(d.instagramHandle, DEFAULT_SETTINGS.instagramHandle).replace(/^@/, ""),
+    facebookUrl: cleanUrl(d.facebookUrl, DEFAULT_SETTINGS.facebookUrl),
     tagline: cleanText(d.tagline, DEFAULT_SETTINGS.tagline),
   };
 }

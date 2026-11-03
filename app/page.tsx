@@ -24,7 +24,7 @@ export default async function HomePage() {
     name: "DOPAMINE CLUB",
     url: SITE_URL,
     logo: `${SITE_URL}/brand/dc-monogram-512.png`,
-    sameAs: [instagramUrl(settings.instagramHandle)],
+    sameAs: [instagramUrl(settings.instagramHandle), settings.facebookUrl],
   };
 
   return (

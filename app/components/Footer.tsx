@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaInstagram, FaWhatsapp } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
 import { FiArrowUp } from "react-icons/fi";
 
 import { useCategories } from "../lib/useCategories";
@@ -86,6 +86,15 @@ export default function Footer() {
                 style={{ borderColor: "var(--dc-inverse-text)" }}
               >
                 <FaInstagram className="text-base" /> @{settings.instagramHandle}
+              </a>
+              <a
+                href={settings.facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-extrabold uppercase"
+                style={{ borderColor: "var(--dc-inverse-text)" }}
+              >
+                <FaFacebook className="text-base" /> Facebook
               </a>
             </div>
           </div>

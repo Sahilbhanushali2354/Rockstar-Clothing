@@ -18,6 +18,7 @@ import {
 
 import { useCategories } from "../lib/useCategories";
 import { useStoreSettings } from "../lib/useStoreSettings";
+import { instagramUrl } from "../lib/storeSettings";
 import { buildWhatsAppUrl } from "../lib/whatsapp";
 import { STORE } from "../theme/tokens";
 
@@ -203,7 +204,7 @@ export default function Footer() {
               </Button>
               <Button
                 component="a"
-                href={settings.instagramHandle}
+                href={instagramUrl(settings.instagramHandle)}
                 {...external}
                 startIcon={<Instagram />}
                 sx={{

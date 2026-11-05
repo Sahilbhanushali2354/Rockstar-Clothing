@@ -25,6 +25,7 @@ import { revalidateStore } from "@/app/lib/adminApi";
 import {
   DEFAULT_SETTINGS,
   instagramUrl,
+  toInstagramHandle,
   normalizeSettings,
   SETTINGS_PATH,
   type StoreSettings,
@@ -301,10 +302,7 @@ export default function StoreSettingsPage() {
                 label="Instagram handle"
                 value={form.instagramHandle}
                 onChange={(e) =>
-                  set(
-                    "instagramHandle",
-                    e.target.value.replace(/^@/, "").replace(/\s/g, ""),
-                  )
+                  set("instagramHandle", toInstagramHandle(e.target.value))
                 }
                 helperText={
                   <>
@@ -315,7 +313,7 @@ export default function StoreSettingsPage() {
                       rel="noopener noreferrer"
                       color="inherit"
                     >
-                      {instagramUrl(preview.instagramHandle)}
+                      Dopamineclub.originals
                     </MuiLink>
                   </>
                 }

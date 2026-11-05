@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   heroHighlight: "energy.",
   heroSubtitle:
     "Streetwear, co-ord sets & graphic tees that go viral. Pick your fit, order on WhatsApp, pay via UPI.",
-  instagramHandle: "https://www.instagram.com/dopamineclub.originals/",
+  instagramHandle: "dopamineclub.originals",
   facebookUrl: "https://www.facebook.com/people/Dopamine-Club/61595935542338/",
   tagline:
     "Trending streetwear, co-ord sets, graphic tees & viral drops. Order straight on WhatsApp.",
@@ -78,14 +78,25 @@ export function normalizeSettings(
     heroTitle: cleanText(d.heroTitle, DEFAULT_SETTINGS.heroTitle),
     heroHighlight: cleanText(d.heroHighlight, DEFAULT_SETTINGS.heroHighlight),
     heroSubtitle: cleanText(d.heroSubtitle, DEFAULT_SETTINGS.heroSubtitle),
-    instagramHandle: cleanText(
-      d.instagramHandle,
-      DEFAULT_SETTINGS.instagramHandle,
-    ).replace(/^@/, ""),
+    instagramHandle:
+      toInstagramHandle(d.instagramHandle) || DEFAULT_SETTINGS.instagramHandle,
     facebookUrl: cleanUrl(d.facebookUrl, DEFAULT_SETTINGS.facebookUrl),
     tagline: cleanText(d.tagline, DEFAULT_SETTINGS.tagline),
   };
 }
 
+/**
+ * Accepts "@handle", "handle" or a pasted profile URL
+ * (https://www.instagram.com/handle/?igsh=...) and returns the bare handle.
+ */
+export function toInstagramHandle(value: unknown): string {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text
+    .replace(/^(https?:\/\/)?(www\.)?instagram\.com\//i, "")
+    .replace(/[/?#].*$/, "")
+    .replace(/^@/, "")
+    .replace(/\s/g, "");
+}
+
 export const instagramUrl = (handle: string) =>
-  `https://instagram.com/${handle.replace(/^@/, "")}`;
+  `https://www.instagram.com/${toInstagramHandle(handle)}/`;

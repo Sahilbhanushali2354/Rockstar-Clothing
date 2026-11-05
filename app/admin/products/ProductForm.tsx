@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -13,7 +14,7 @@ import {
   addDoc,
   collection,
   doc,
-  getDocs,
+  onSnapshot,
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -57,8 +58,9 @@ import {
   DEFAULT_SIZE_LABELS,
   LOW_STOCK,
   PRODUCTS,
-  getProductForAdmin,
+  subscribeProductForAdmin,
   toSlug,
+  type Product,
   type ProductImage,
   type ProductSize,
 } from "@/app/lib/products";
@@ -115,95 +117,159 @@ export default function ProductForm({
 }) {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  // null until the first categories snapshot arrives.
+  const [categoryDocs, setCategoryDocs] = useState<CategoryOption[] | null>(
+    null,
+  );
+  const [productLoaded, setProductLoaded] = useState(!editId);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [sizes, setSizes] = useState<ProductSize[]>(defaultSizes);
 
+  // A newer version of this product saved elsewhere while you had unsaved edits.
+  const [remoteProduct, setRemoteProduct] = useState<Product | null>(null);
+
   // Cloudinary images removed in this session — deleted after a successful save.
   const removedIds = useRef<string[]>([]);
 
-  /* ---------- load categories + product (edit mode) ---------- */
-  useEffect(() => {
-    let active = true;
+  /*
+   * Unsaved-changes tracking: `baseline` is the editor state last loaded
+   * from Firestore. Live updates only replace the form while it still
+   * matches the baseline, so your typing is never overwritten.
+   */
+  const snapshotOf = (state: {
+    form: FormState;
+    images: ProductImage[];
+    sizes: ProductSize[];
+  }) => JSON.stringify(state);
+  const current = useRef({ form, images, sizes });
+  current.current = { form, images, sizes };
+  const baseline = useRef(snapshotOf(current.current));
+  const savingRef = useRef(false);
+  const isDirty = () => snapshotOf(current.current) !== baseline.current;
 
-    (async () => {
-      try {
-        setLoading(true);
-        setNotFound(false);
-        setSavedId(null);
-        setErrors({});
-        removedIds.current = [];
-
-        const snapshot = await getDocs(collection(FStore, "categories"));
-        const list = snapshot.docs
-          .map((categoryDoc) => {
-            const data = categoryDoc.data();
-            return {
-              slug: toSlug(String(data.slug ?? categoryDoc.id)),
-              name: String(data.name ?? categoryDoc.id),
-              order: Number(data.order ?? 0),
-            };
-          })
-          .sort((a, b) => a.order - b.order);
-
-        const product = editId ? await getProductForAdmin(editId) : null;
-        if (!active) return;
-
-        // Keep a legacy category selectable even if no category doc exists for it.
-        if (
-          product?.category &&
-          !list.some((c) => c.slug === product.category)
-        ) {
-          list.push({
-            slug: product.category,
-            name: product.category,
-            order: 999,
-          });
-        }
-        setCategories(list);
-
-        if (editId && !product) {
-          setNotFound(true);
-        } else if (product) {
-          setForm({
-            title: product.title,
-            description: product.description,
-            price: String(product.price || ""),
-            compareAtPrice: product.compareAtPrice
-              ? String(product.compareAtPrice)
-              : "",
-            category: product.category,
-            subcategory: product.subcategory,
-            active: product.active,
-            featured: product.featured,
-          });
-          setImages(product.images);
-          setSizes(product.sizes.length > 0 ? product.sizes : defaultSizes());
-        } else {
-          setForm({ ...EMPTY_FORM, category: list[0]?.slug ?? "" });
-          setImages([]);
-          setSizes(defaultSizes());
-        }
-      } catch (loadError) {
-        console.error(loadError);
-        if (active) toast.error("Couldn't load data. Check Firestore rules.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
+  const applyProduct = (product: Product) => {
+    const next = {
+      form: {
+        title: product.title,
+        description: product.description,
+        price: String(product.price || ""),
+        compareAtPrice: product.compareAtPrice
+          ? String(product.compareAtPrice)
+          : "",
+        category: product.category,
+        subcategory: product.subcategory,
+        active: product.active,
+        featured: product.featured,
+      },
+      images: product.images,
+      sizes: product.sizes.length > 0 ? product.sizes : defaultSizes(),
     };
+    setForm(next.form);
+    setImages(next.images);
+    setSizes(next.sizes);
+    baseline.current = snapshotOf(next);
+    removedIds.current = [];
+    setRemoteProduct(null);
+  };
+
+  /* ---------- live categories ---------- */
+  useEffect(
+    () =>
+      onSnapshot(
+        collection(FStore, "categories"),
+        (snapshot) =>
+          setCategoryDocs(
+            snapshot.docs
+              .map((categoryDoc) => {
+                const data = categoryDoc.data();
+                return {
+                  slug: toSlug(String(data.slug ?? categoryDoc.id)),
+                  name: String(data.name ?? categoryDoc.id),
+                  order: Number(data.order ?? 0),
+                };
+              })
+              .sort((a, b) => a.order - b.order),
+          ),
+        (loadError) => {
+          console.error(loadError);
+          toast.error("Couldn't load categories. Check Firestore rules.");
+          setCategoryDocs([]);
+        },
+      ),
+    [],
+  );
+
+  /* ---------- live product (edit mode) ---------- */
+  useEffect(() => {
+    setNotFound(false);
+    setSavedId(null);
+    setErrors({});
+    setRemoteProduct(null);
+    removedIds.current = [];
+
+    if (!editId) {
+      setProductLoaded(true);
+      return;
+    }
+
+    setProductLoaded(false);
+    return subscribeProductForAdmin(
+      editId,
+      (product) => {
+        setProductLoaded(true);
+
+        if (!product) {
+          // Deleted (possibly in another tab).
+          setNotFound(true);
+          return;
+        }
+        setNotFound(false);
+
+        if (savingRef.current) return; // our own save echoing back
+        if (isDirty()) {
+          setRemoteProduct(product); // don't clobber unsaved edits — offer a reload instead
+          return;
+        }
+        applyProduct(product);
+      },
+      (loadError) => {
+        console.error(loadError);
+        toast.error("Couldn't load product. Check Firestore rules.");
+        setProductLoaded(true);
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId]);
+
+  // New product: pre-select the first category once categories arrive.
+  useEffect(() => {
+    if (editId || !categoryDocs?.length) return;
+    setForm((f) => {
+      if (f.category && categoryDocs.some((c) => c.slug === f.category))
+        return f;
+      const next = { ...f, category: categoryDocs[0].slug };
+      baseline.current = snapshotOf({ ...current.current, form: next });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, categoryDocs]);
+
+  // Keep a legacy/deleted category selectable if the product still uses it.
+  const categories = useMemo(() => {
+    const list = categoryDocs ?? [];
+    return form.category && !list.some((c) => c.slug === form.category)
+      ? [...list, { slug: form.category, name: form.category }]
+      : list;
+  }, [categoryDocs, form.category]);
+
+  const loading = categoryDocs === null || !productLoaded;
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -362,6 +428,7 @@ export default function ProductForm({
 
     try {
       setSaving(true);
+      savingRef.current = true;
 
       let id = editId;
       if (editId) {
@@ -377,6 +444,9 @@ export default function ProductForm({
       await deleteFromCloudinary(removedIds.current);
       removedIds.current = [];
 
+      // What you just saved is now the clean baseline.
+      baseline.current = snapshotOf(current.current);
+
       if (editId) {
         toast.success("Changes saved");
         void revalidateStore({ products: true, productIds: [editId] });
@@ -384,15 +454,22 @@ export default function ProductForm({
         toast.success(`"${payload.title}" added`);
         void revalidateStore({ products: true });
         setSavedId(id);
-        setForm({ ...EMPTY_FORM, category: form.category });
-        setImages([]);
-        setSizes(defaultSizes());
+        const fresh = {
+          form: { ...EMPTY_FORM, category: form.category },
+          images: [],
+          sizes: defaultSizes(),
+        };
+        setForm(fresh.form);
+        setImages(fresh.images);
+        setSizes(fresh.sizes);
+        baseline.current = snapshotOf(fresh);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (saveError) {
       console.error(saveError);
       toast.error("Couldn't save. Check Firestore rules.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -507,6 +584,35 @@ export default function ProductForm({
           ) : undefined
         }
       />
+
+      {remoteProduct && (
+        <Alert
+          severity="warning"
+          variant="outlined"
+          sx={{ mb: 3, alignItems: "center" }}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyProduct(remoteProduct)}
+              >
+                Load latest
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setRemoteProduct(null)}
+              >
+                Keep mine
+              </Button>
+            </Stack>
+          }
+        >
+          This product was changed in another tab. Load the latest version (your
+          unsaved edits will be lost) or keep editing and save to overwrite it.
+        </Alert>
+      )}
 
       {savedId && (
         <Alert

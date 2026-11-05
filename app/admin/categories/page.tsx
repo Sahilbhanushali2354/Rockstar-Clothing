@@ -388,6 +388,9 @@ export default function CategoriesPage() {
                   sx={{
                     position: "relative",
                     aspectRatio: "16 / 10",
+                    // Clip so a tall photo can't stretch the box (and the whole row).
+                    overflow: "hidden",
+                    flexShrink: 0,
                     bgcolor: "var(--dc-surface-2)",
                   }}
                 >
@@ -404,10 +407,11 @@ export default function CategoriesPage() {
                       alt=""
                       loading="lazy"
                       sx={{
-                        display: "block",
+                        position: "absolute",
+                        inset: 0,
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
+                        objectFit: "contain",
                         ...(!category.active && {
                           opacity: 0.5,
                           filter: "grayscale(1)",
@@ -589,7 +593,7 @@ export default function CategoriesPage() {
                   component="img"
                   src={imagePreview}
                   alt=""
-                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
                 />
               ) : (
                 <Stack

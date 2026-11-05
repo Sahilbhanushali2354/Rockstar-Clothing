@@ -101,15 +101,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <Stack sx={{ height: "100%" }}>
+      {/* Logo + badge stacked: side by side they overflow the 256px sidebar. */}
       <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 2.5,
-          pb: 2.5,
-          pt: 3,
-        }}
+        spacing={1}
+        sx={{ alignItems: "flex-start", px: 2.5, pb: 2.5, pt: 3, pr: 6 }}
       >
         <MuiLink
           component={Link}
@@ -125,7 +120,12 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           label="Admin"
           size="small"
           color="secondary"
-          sx={{ height: 22, borderRadius: 1 }}
+          sx={{
+            height: 20,
+            borderRadius: 1,
+            fontSize: 10,
+            letterSpacing: "0.1em",
+          }}
         />
       </Stack>
 

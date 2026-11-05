@@ -19,7 +19,7 @@ import SectionHeader from "./SectionHeader";
 import ProductGrid from "./ProductGrid";
 import { useCategories } from "@/app/lib/useCategories";
 import {
-  getActiveProducts,
+  subscribeActiveProducts,
   isSoldOut,
   slugToLabel,
   toSlug,
@@ -63,22 +63,24 @@ export default function Catalog({
   const [sort, setSort] = useState<Sort>("new");
   const [inStockOnly, setInStockOnly] = useState(false);
 
+  // Live: products added/edited/hidden in admin appear here instantly.
   useEffect(() => {
-    let active = true;
     setError(false);
 
-    getActiveProducts(slug || undefined)
-      .then((list) => active && setProducts(list))
-      .catch((fetchError) => {
+    return subscribeActiveProducts(
+      slug || undefined,
+      (list) => {
+        setProducts(list);
+        setError(false);
+        setLoading(false);
+      },
+      (fetchError) => {
         console.error("Failed to load products:", fetchError);
         // Keep showing server data if we have it.
-        if (active && initialProducts === null) setError(true);
-      })
-      .finally(() => active && setLoading(false));
-
-    return () => {
-      active = false;
-    };
+        if (initialProducts === null) setError(true);
+        setLoading(false);
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 

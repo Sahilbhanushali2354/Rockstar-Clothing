@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
 
 import { auth, FStore } from "@/firebase/firebase.config";
 
@@ -31,7 +31,12 @@ function start() {
   if (started) return;
   started = true;
 
-  onAuthStateChanged(auth, async (user) => {
+  let unsubProfile: Unsubscribe | undefined;
+
+  onAuthStateChanged(auth, (user) => {
+    unsubProfile?.();
+    unsubProfile = undefined;
+
     if (!user) {
       state = { ready: true, user: null, name: "", isAdmin: false };
       emit();
@@ -42,17 +47,22 @@ function start() {
     state = { ready: true, user, name: user.displayName ?? "", isAdmin: false };
     emit();
 
-    const snapshot = await getDoc(doc(FStore, "users", user.uid)).catch(() => null);
-    const data = snapshot?.data();
-    if (auth.currentUser?.uid !== user.uid) return;
-
-    state = {
-      ready: true,
-      user,
-      name: String(data?.name ?? user.displayName ?? ""),
-      isAdmin: data?.role === "admin",
-    };
-    emit();
+    // Live profile: name or admin role changes apply everywhere instantly.
+    unsubProfile = onSnapshot(
+      doc(FStore, "users", user.uid),
+      (snapshot) => {
+        if (auth.currentUser?.uid !== user.uid) return;
+        const data = snapshot.data();
+        state = {
+          ready: true,
+          user,
+          name: String(data?.name ?? user.displayName ?? ""),
+          isAdmin: data?.role === "admin",
+        };
+        emit();
+      },
+      (error) => console.error("Failed to load profile:", error),
+    );
   });
 }
 

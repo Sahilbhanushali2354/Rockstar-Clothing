@@ -43,8 +43,8 @@ import { trackPixel } from "@/app/lib/metaPixel";
 import {
   DEFAULT_SIZE_LABELS,
   LOW_STOCK,
-  getActiveProducts,
-  getProduct,
+  subscribeActiveProducts,
+  subscribeProduct,
   slugToLabel,
   type Product,
   type ProductSize,
@@ -117,71 +117,63 @@ export default function ProductView({
       : false,
   );
 
-  useEffect(() => {
-    let active = true;
+  // Live product: price/stock/photo edits in admin appear instantly; if the
+  // product is hidden or deleted, the page switches to "not found".
+  useEffect(
+    () =>
+      subscribeProduct(
+        productId,
+        (found) => {
+          setLoading(false);
 
-    (async () => {
-      try {
-        // Fresh read (live stock). Silent when we already have server data.
-        const found = await getProduct(productId);
-        if (!active) return;
+          if (!found) {
+            setProduct(null);
+            setNotFound(true);
+            return;
+          }
 
-        if (!found) {
-          setProduct(null);
-          setNotFound(true);
-          return;
-        }
-
-        setProduct(found);
-        // Keep the shopper's size if it's still in stock; otherwise pick one that is.
-        setSelectedSize((current) => {
-          const still = getSizeOptions(found).find(
-            (size) => size.label === current && size.stock > 0,
-          );
-          return still ? current : firstAvailableSize(found);
-        });
-
-        if (!tracked.current) {
-          tracked.current = true;
-          trackPixel("ViewContent", {
-            content_ids: [found.id],
-            content_name: found.title,
-            content_category: found.category,
-            content_type: "product",
-            value: found.price,
-            currency: "INR",
+          setNotFound(false);
+          setProduct(found);
+          // Keep the shopper's size if it's still in stock; otherwise pick one that is.
+          setSelectedSize((current) => {
+            const still = getSizeOptions(found).find(
+              (size) => size.label === current && size.stock > 0,
+            );
+            return still ? current : firstAvailableSize(found);
           });
-        }
 
-        if (initialRelated.length === 0) {
-          getActiveProducts(found.category)
-            .then(
-              (list) =>
-                active &&
-                setRelated(
-                  list.filter((item) => item.id !== found.id).slice(0, 4),
-                ),
-            )
-            .catch(() => undefined);
-        }
-      } catch (error) {
-        console.error("Error fetching product:", error);
-        // Only show "not found" if we had nothing to display.
-        if (active && !initialProduct) {
-          setProduct(null);
-          setNotFound(true);
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-    // initial* props only seed state; re-run only when the product changes.
+          if (!tracked.current) {
+            tracked.current = true;
+            trackPixel("ViewContent", {
+              content_ids: [found.id],
+              content_name: found.title,
+              content_category: found.category,
+              content_type: "product",
+              value: found.price,
+              currency: "INR",
+            });
+          }
+        },
+        (error) => {
+          console.error("Error fetching product:", error);
+          setLoading(false);
+          // Keep showing server data if we have it.
+          setNotFound((current) => current || !initialProduct);
+        },
+      ),
+    // initial* props only seed state; re-subscribe only when the product changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+    [productId],
+  );
+
+  // Live "You may also like" for this product's category.
+  const productCategory = product?.category;
+  useEffect(() => {
+    if (!productCategory) return;
+    return subscribeActiveProducts(productCategory, (list) =>
+      setRelated(list.filter((item) => item.id !== productId).slice(0, 4)),
+    );
+  }, [productCategory, productId]);
 
   const sizeOptions = useMemo(
     () => (product ? getSizeOptions(product) : []),
@@ -192,6 +184,11 @@ export default function ProductView({
   const soldOut =
     sizeOptions.length > 0 && sizeOptions.every((size) => size.stock <= 0);
   const canBuy = !soldOut && selectedStock > 0;
+
+  // If live stock drops below the chosen quantity, cap it.
+  useEffect(() => {
+    if (selectedStock > 0) setQuantity((q) => Math.min(q, selectedStock));
+  }, [selectedStock]);
 
   const categoryName = product
     ? (categories.find((category) => category.slug === product.category)

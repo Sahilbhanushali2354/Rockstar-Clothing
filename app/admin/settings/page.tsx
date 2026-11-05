@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -51,16 +52,42 @@ export default function StoreSettingsPage() {
   const [form, setForm] = useState<FormState>(toForm(DEFAULT_SETTINGS));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Newer settings saved elsewhere while this form has unsaved edits.
+  const [remote, setRemote] = useState<FormState | null>(null);
 
-  useEffect(() => {
-    getDoc(doc(FStore, SETTINGS_PATH.collection, SETTINGS_PATH.doc))
-      .then((snapshot) => setForm(toForm(normalizeSettings(snapshot.data()))))
-      .catch((error) => {
-        console.error(error);
-        toast.error("Couldn't load settings.");
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  // Live updates replace the form only while it matches what was last loaded,
+  // so edits in progress are never overwritten.
+  const formRef = useRef(form);
+  formRef.current = form;
+  const baseline = useRef(JSON.stringify(form));
+  const savingRef = useRef(false);
+
+  const apply = (next: FormState) => {
+    setForm(next);
+    baseline.current = JSON.stringify(next);
+    setRemote(null);
+  };
+
+  useEffect(
+    () =>
+      onSnapshot(
+        doc(FStore, SETTINGS_PATH.collection, SETTINGS_PATH.doc),
+        (snapshot) => {
+          setLoading(false);
+          if (savingRef.current) return; // our own save echoing back
+          const next = toForm(normalizeSettings(snapshot.data()));
+          if (JSON.stringify(formRef.current) !== baseline.current)
+            setRemote(next);
+          else apply(next);
+        },
+        (error) => {
+          console.error(error);
+          toast.error("Couldn't load settings.");
+          setLoading(false);
+        },
+      ),
+    [],
+  );
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -74,17 +101,21 @@ export default function StoreSettingsPage() {
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
+    savingRef.current = true;
     try {
       await setDoc(doc(FStore, SETTINGS_PATH.collection, SETTINGS_PATH.doc), {
         ...preview,
         updatedAt: serverTimestamp(),
       });
+      // Saved values (normalised) are the new clean baseline.
+      apply(toForm(preview));
       await revalidateStore({ settings: true });
       toast.success("Store updated");
     } catch (error) {
       console.error(error);
       toast.error("Couldn't save. Check Firestore rules.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -138,6 +169,35 @@ export default function StoreSettingsPage() {
           </Button>
         }
       />
+
+      {remote && (
+        <Alert
+          severity="warning"
+          variant="outlined"
+          sx={{ mb: 3, alignItems: "center" }}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => apply(remote)}
+              >
+                Load latest
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => setRemote(null)}
+              >
+                Keep mine
+              </Button>
+            </Stack>
+          }
+        >
+          Settings were changed in another tab. Load the latest (your unsaved
+          edits will be lost) or keep editing and save to overwrite.
+        </Alert>
+      )}
 
       <Box
         component="form"

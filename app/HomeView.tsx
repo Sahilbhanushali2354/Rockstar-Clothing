@@ -22,11 +22,11 @@ import Marquee from "./components/store/Marquee";
 import { useCategories } from "./lib/useCategories";
 import { useStoreSettings } from "./lib/useStoreSettings";
 import {
-  getActiveProducts,
+  subscribeActiveProducts,
   type Product,
   type StoreCategory,
 } from "./lib/products";
-import { imageUrl } from "./lib/imageUrl";
+import { imageUrl, type ImageAspect } from "./lib/imageUrl";
 import { buildWhatsAppUrl } from "./lib/whatsapp";
 import { trackPixel } from "./lib/metaPixel";
 import {
@@ -36,8 +36,17 @@ import {
 } from "./lib/storeSettings";
 import { STORE } from "./theme/tokens";
 
-const categoryImage = (url: string, publicId: string, width: number) =>
-  url ? imageUrl({ url, publicId }, width) : "";
+/*
+ * Category photo URL. With `aspect`, Cloudinary pads the WHOLE photo into
+ * that frame (no cropping) — so a tall jeans shot and a wide tee shot both
+ * show completely in the same portrait tile.
+ */
+const categoryImage = (
+  url: string,
+  publicId: string,
+  width: number,
+  aspect?: ImageAspect,
+) => (url ? imageUrl({ url, publicId }, width, aspect) : "");
 
 const DISPLAY_FONT = "var(--font-display), var(--font-body), sans-serif";
 
@@ -74,16 +83,22 @@ export default function HomeView({
     initialProducts === null,
   );
 
-  useEffect(() => {
-    let active = true;
-    getActiveProducts()
-      .then((list) => active && setProducts(list))
-      .catch((error) => console.error("Failed to load products:", error))
-      .finally(() => active && setProductsLoading(false));
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Live: new drops / stock changes from admin show up without a refresh.
+  useEffect(
+    () =>
+      subscribeActiveProducts(
+        undefined,
+        (list) => {
+          setProducts(list);
+          setProductsLoading(false);
+        },
+        (error) => {
+          console.error("Failed to load products:", error);
+          setProductsLoading(false);
+        },
+      ),
+    [],
+  );
 
   const instagramHandle = `@${settings.instagramHandle}`;
   const instagramHref = instagramUrl(settings.instagramHandle);
@@ -112,7 +127,12 @@ export default function HomeView({
   const heroCategory = categories.find((category) => category.imageUrl);
   const heroImage =
     (heroCategory &&
-      categoryImage(heroCategory.imageUrl, heroCategory.imagePath, 1000)) ||
+      categoryImage(
+        heroCategory.imageUrl,
+        heroCategory.imagePath,
+        1000,
+        "4:5",
+      )) ||
     (drops[0]?.images[0] ? imageUrl(drops[0].images[0], 1000, "4:5") : "");
   const editorial =
     categories.filter((category) => category.imageUrl)[1] ?? heroCategory;
@@ -280,7 +300,7 @@ export default function HomeView({
                       display: "block",
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
+                      objectFit: "contain",
                     }}
                   />
                 ) : (
@@ -382,6 +402,7 @@ export default function HomeView({
                           category.imageUrl,
                           category.imagePath,
                           600,
+                          "4:5",
                         )}
                         alt=""
                         loading="lazy"
@@ -390,7 +411,7 @@ export default function HomeView({
                           inset: 0,
                           width: "100%",
                           height: "100%",
-                          objectFit: "cover",
+                          objectFit: "contain",
                           transition: "transform 500ms",
                         }}
                       />
@@ -517,6 +538,8 @@ export default function HomeView({
                     position: "relative",
                     overflow: "hidden",
                     aspectRatio: { xs: "4 / 3", md: "auto" },
+                    minHeight: { md: 360 },
+                    bgcolor: "var(--dc-surface-2)",
                   }}
                 >
                   <Box
@@ -534,7 +557,7 @@ export default function HomeView({
                       inset: 0,
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
+                      objectFit: "contain",
                       transition: "transform 700ms",
                     }}
                   />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,7 +9,13 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  type Unsubscribe,
+} from "firebase/firestore";
 import {
   Alert,
   Box,
@@ -59,23 +65,58 @@ export default function ProfilePage() {
   );
   const wishlistCount = useAppSelector((state) => state.wishlist.items.length);
 
+  // Live profile. Name/phone only refresh while you haven't edited them,
+  // so typing is never overwritten; role always stays in sync.
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const editable = (p: Profile) =>
+    JSON.stringify({ name: p.name, phone: p.phone });
+  const baseline = useRef(editable(profile));
+  const savingRef = useRef(false);
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubProfile: Unsubscribe | undefined;
+
+    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      unsubProfile?.();
+      unsubProfile = undefined;
       setUser(firebaseUser);
-      if (firebaseUser) {
-        const snapshot = await getDoc(
-          doc(FStore, "users", firebaseUser.uid),
-        ).catch(() => null);
-        const data = snapshot?.data();
-        setProfile({
-          name: String(data?.name ?? firebaseUser.displayName ?? ""),
-          phone: String(data?.phone ?? ""),
-          role: String(data?.role ?? "customer"),
-        });
+
+      if (!firebaseUser) {
+        setChecking(false);
+        return;
       }
-      setChecking(false);
+
+      unsubProfile = onSnapshot(
+        doc(FStore, "users", firebaseUser.uid),
+        (snapshot) => {
+          const data = snapshot.data();
+          const next: Profile = {
+            name: String(data?.name ?? firebaseUser.displayName ?? ""),
+            phone: String(data?.phone ?? ""),
+            role: String(data?.role ?? "customer"),
+          };
+          setChecking(false);
+          if (savingRef.current) return;
+
+          if (editable(profileRef.current) !== baseline.current) {
+            setProfile((current) => ({ ...current, role: next.role }));
+          } else {
+            setProfile(next);
+            baseline.current = editable(next);
+          }
+        },
+        (error) => {
+          console.error("Failed to load profile:", error);
+          setChecking(false);
+        },
+      );
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubAuth();
+      unsubProfile?.();
+    };
   }, []);
 
   const handleSave = async (event: FormEvent) => {
@@ -91,6 +132,7 @@ export default function ProfilePage() {
     }
 
     setSaving(true);
+    savingRef.current = true;
     setMessage(null);
     try {
       await updateProfile(user, { displayName: profile.name.trim() });
@@ -106,11 +148,13 @@ export default function ProfilePage() {
         },
         { merge: true },
       );
+      baseline.current = editable(profile);
       setMessage({ type: "ok", text: "Saved." });
     } catch (error) {
       console.error(error);
       setMessage({ type: "error", text: "Couldn't save. Please try again." });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

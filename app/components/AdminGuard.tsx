@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
 
 import { auth, FStore } from "@/firebase/firebase.config";
 import Loader from "./Loader";
@@ -34,34 +34,46 @@ export default function AdminGuard({
   useEffect(() => {
     const loginUrl = `/auth/login?redirect=${encodeURIComponent(pathname || "/admin")}`;
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubRole: Unsubscribe | undefined;
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      unsubRole?.();
+      unsubRole = undefined;
+
       if (!firebaseUser) {
         setStatus("denied");
         router.replace(loginUrl);
         return;
       }
 
-      try {
-        const snapshot = await getDoc(doc(FStore, "users", firebaseUser.uid));
+      // Live role check: if admin access is revoked, this tab is kicked out
+      // immediately; if it is granted, the admin opens without a reload.
+      unsubRole = onSnapshot(
+        doc(FStore, "users", firebaseUser.uid),
+        (snapshot) => {
+          if (snapshot.data()?.role === "admin") {
+            setUser(firebaseUser);
+            setStatus("allowed");
+            return;
+          }
 
-        if (snapshot.data()?.role === "admin") {
-          setUser(firebaseUser);
-          setStatus("allowed");
-          return;
-        }
-
-        // Signed in, but not an admin.
-        setStatus("denied");
-        router.replace("/");
-      } catch (error) {
-        console.error("Admin check failed:", error);
-        setStatus("denied");
-        await signOut(auth).catch(() => undefined);
-        router.replace(loginUrl);
-      }
+          // Signed in, but not (or no longer) an admin.
+          setStatus("denied");
+          router.replace("/");
+        },
+        async (error) => {
+          console.error("Admin check failed:", error);
+          setStatus("denied");
+          await signOut(auth).catch(() => undefined);
+          router.replace(loginUrl);
+        },
+      );
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubRole?.();
+    };
     // pathname intentionally excluded: only re-check on auth changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);

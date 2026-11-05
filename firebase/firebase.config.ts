@@ -5,7 +5,7 @@ import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAvzUyJhgr5ur2GCufPoUxVoe1xJRmgLsk",
-  authDomain: "rockstar-clothing-859c4.firebaseapp.com",
+  authDomain: "rockstar-clothing-859c4  .firebaseapp.com",
   projectId: "rockstar-clothing-859c4",
   storageBucket: "rockstar-clothing-859c4.appspot.com",
   messagingSenderId: "89378510531",

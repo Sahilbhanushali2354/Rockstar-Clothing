@@ -4,7 +4,10 @@
  * DEFAULT_SETTINGS so the site never renders empty.
  */
 
-export const SETTINGS_PATH = { collection: "settings", doc: "storefront" } as const;
+export const SETTINGS_PATH = {
+  collection: "settings",
+  doc: "storefront",
+} as const;
 
 export interface StoreSettings {
   /** scrolling strip above the navbar */
@@ -24,16 +27,27 @@ export interface StoreSettings {
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
-  announcements: ["New drops every week", "Order on WhatsApp · Pay via UPI", "Ships across India", "Size help on chat"],
-  tickerItems: ["Fresh drops weekly", "Limited stock", "Order on WhatsApp", "Pay via UPI"],
+  announcements: [
+    "New drops every week",
+    "Order on WhatsApp · Pay via UPI",
+    "Ships across India",
+    "Size help on chat",
+  ],
+  tickerItems: [
+    "Fresh drops weekly",
+    "Limited stock",
+    "Order on WhatsApp",
+    "Pay via UPI",
+  ],
   heroBadge: "New drop is live",
   heroTitle: "Main character",
   heroHighlight: "energy.",
   heroSubtitle:
     "Streetwear, co-ord sets & graphic tees that go viral. Pick your fit, order on WhatsApp, pay via UPI.",
-  instagramHandle: "dopamineclub",
+  instagramHandle: "https://www.instagram.com/dopamineclub.originals/",
   facebookUrl: "https://www.facebook.com/people/Dopamine-Club/61595935542338/",
-  tagline: "Trending streetwear, co-ord sets, graphic tees & viral drops. Order straight on WhatsApp.",
+  tagline:
+    "Trending streetwear, co-ord sets, graphic tees & viral drops. Order straight on WhatsApp.",
 };
 
 const cleanList = (value: unknown, fallback: string[]) => {
@@ -53,7 +67,9 @@ const cleanUrl = (value: unknown, fallback: string) => {
   return /^https?:\/\//i.test(text) ? text : fallback;
 };
 
-export function normalizeSettings(data: Record<string, unknown> | null | undefined): StoreSettings {
+export function normalizeSettings(
+  data: Record<string, unknown> | null | undefined,
+): StoreSettings {
   const d = data ?? {};
   return {
     announcements: cleanList(d.announcements, DEFAULT_SETTINGS.announcements),
@@ -62,10 +78,14 @@ export function normalizeSettings(data: Record<string, unknown> | null | undefin
     heroTitle: cleanText(d.heroTitle, DEFAULT_SETTINGS.heroTitle),
     heroHighlight: cleanText(d.heroHighlight, DEFAULT_SETTINGS.heroHighlight),
     heroSubtitle: cleanText(d.heroSubtitle, DEFAULT_SETTINGS.heroSubtitle),
-    instagramHandle: cleanText(d.instagramHandle, DEFAULT_SETTINGS.instagramHandle).replace(/^@/, ""),
+    instagramHandle: cleanText(
+      d.instagramHandle,
+      DEFAULT_SETTINGS.instagramHandle,
+    ).replace(/^@/, ""),
     facebookUrl: cleanUrl(d.facebookUrl, DEFAULT_SETTINGS.facebookUrl),
     tagline: cleanText(d.tagline, DEFAULT_SETTINGS.tagline),
   };
 }
 
-export const instagramUrl = (handle: string) => `https://instagram.com/${handle.replace(/^@/, "")}`;
+export const instagramUrl = (handle: string) =>
+  `https://instagram.com/${handle.replace(/^@/, "")}`;

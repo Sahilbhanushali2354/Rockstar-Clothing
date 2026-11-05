@@ -1,8 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
-import { FiArrowUp } from "react-icons/fi";
+import {
+  Box,
+  Button,
+  Container,
+  Link as MuiLink,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  ArrowUpward,
+  Facebook,
+  Instagram,
+  WhatsApp,
+} from "@mui/icons-material";
 
 import { useCategories } from "../lib/useCategories";
 import { useStoreSettings } from "../lib/useStoreSettings";
@@ -16,148 +28,338 @@ const STEPS = [
   { n: "03", title: "Pay via UPI", text: "We confirm & ship." },
 ];
 
+const INVERSE_LINE = "var(--dc-inverse-text)";
+
+const linkSx = {
+  fontSize: 14,
+  fontWeight: 600,
+  opacity: 0.75,
+  transition: "opacity 150ms",
+  "&:hover": { opacity: 1 },
+} as const;
+
+const heading = {
+  mb: 2,
+  fontSize: 12,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: "0.2em",
+  opacity: 0.6,
+} as const;
+
+const pillSx = {
+  px: 2,
+  minHeight: 42,
+  fontSize: 14,
+  fontWeight: 800,
+  boxShadow: "none",
+  "&:hover": { boxShadow: "none", transform: "none" },
+} as const;
+
 export default function Footer() {
   const { categories } = useCategories();
   const settings = useStoreSettings();
   const chatHref = buildWhatsAppUrl(`Hey ${STORE.name}! 👋 I have a question.`);
-  const sizeHref = buildWhatsAppUrl(`Hey ${STORE.name}! 👋 Can you help me pick the right size?`);
+  const sizeHref = buildWhatsAppUrl(
+    `Hey ${STORE.name}! 👋 Can you help me pick the right size?`,
+  );
 
-  const linkClass = "text-sm font-semibold opacity-75 transition-opacity hover:opacity-100 hover:underline";
+  const external = { target: "_blank", rel: "noopener noreferrer" } as const;
 
   return (
-    <footer className="dc-inverse mt-16 border-t-2 border-edge">
+    <Box
+      component="footer"
+      className="dc-inverse"
+      sx={{ mt: 8, borderTop: "2px solid var(--dc-edge)" }}
+    >
       {/* How ordering works — reinforces the WhatsApp funnel on every page */}
-      <div className="border-b-2" style={{ borderColor: "var(--dc-inverse-text)" }}>
-        <div className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-3">
+      <Box sx={{ borderBottom: `2px solid ${INVERSE_LINE}` }}>
+        <Box
+          sx={{
+            mx: "auto",
+            maxWidth: 1280,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+          }}
+        >
           {STEPS.map((step, index) => (
-            <div
+            <Stack
               key={step.n}
-              className={`flex items-center gap-4 px-4 py-5 sm:px-6 lg:px-8 ${
-                index > 0 ? "border-t-2 sm:border-l-2 sm:border-t-0" : ""
-              }`}
-              style={{ borderColor: "var(--dc-inverse-text)" }}
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                px: { xs: 2, sm: 3, lg: 4 },
+                py: 2.5,
+                borderColor: INVERSE_LINE,
+                borderStyle: "solid",
+                borderWidth: 0,
+                ...(index > 0 && {
+                  borderTopWidth: { xs: 2, sm: 0 },
+                  borderLeftWidth: { xs: 0, sm: 2 },
+                }),
+              }}
             >
-              <span className="font-display text-3xl font-bold" style={{ color: "var(--dc-inverse-accent)" }}>
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily:
+                    "var(--font-display), var(--font-body), sans-serif",
+                  fontSize: 30,
+                  fontWeight: 700,
+                  color: "var(--dc-inverse-accent)",
+                }}
+              >
                 {step.n}
-              </span>
-              <div>
-                <p className="font-extrabold uppercase tracking-wide">{step.title}</p>
-                <p className="text-sm opacity-70">{step.text}</p>
-              </div>
-            </div>
+              </Typography>
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.025em",
+                  }}
+                >
+                  {step.title}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                  {step.text}
+                </Typography>
+              </Box>
+            </Stack>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <Link href="/" aria-label="DOPAMINE CLUB home" className="inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+      <Container
+        maxWidth={false}
+        sx={{
+          maxWidth: 1280,
+          px: { xs: 2, sm: 3, lg: 4 },
+          py: { xs: 6, lg: 8 },
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gap: 5,
+            gridTemplateColumns: { xs: "1fr", md: "1.4fr 1fr 1fr" },
+          }}
+        >
+          <Box>
+            <MuiLink
+              component={Link}
+              href="/"
+              aria-label="DOPAMINE CLUB home"
+              sx={{ display: "inline-block" }}
+            >
+              <Box
+                component="img"
                 src="/brand/dopamine-club-logo-800.webp"
                 alt="DOPAMINE CLUB"
                 width={800}
                 height={800}
                 loading="lazy"
                 decoding="async"
-                className="h-40 w-40 rounded-2xl border-2 object-cover sm:h-48 sm:w-48"
-                style={{ borderColor: "var(--dc-inverse-text)", boxShadow: "6px 6px 0 var(--dc-inverse-accent)" }}
+                sx={{
+                  display: "block",
+                  width: { xs: 160, sm: 192 },
+                  height: { xs: 160, sm: 192 },
+                  borderRadius: 4,
+                  border: `2px solid ${INVERSE_LINE}`,
+                  objectFit: "cover",
+                  boxShadow: "6px 6px 0 var(--dc-inverse-accent)",
+                }}
               />
-            </Link>
-            <p className="mt-5 max-w-sm text-sm opacity-75">
+            </MuiLink>
+            <Typography
+              variant="body2"
+              sx={{ mt: 2.5, maxWidth: 384, opacity: 0.75 }}
+            >
               {settings.tagline}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a
+            </Typography>
+            <Stack
+              direction="row"
+              useFlexGap
+              spacing={1.5}
+              sx={{ mt: 3, flexWrap: "wrap" }}
+            >
+              <Button
+                component="a"
                 href={chatHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-extrabold uppercase"
-                style={{ background: "var(--dc-inverse-accent)", color: "var(--dc-inverse-bg)" }}
+                {...external}
+                startIcon={<WhatsApp />}
+                sx={{
+                  ...pillSx,
+                  border: 0,
+                  bgcolor: "var(--dc-inverse-accent)",
+                  color: "var(--dc-inverse-bg)",
+                  "&:hover": {
+                    ...pillSx["&:hover"],
+                    bgcolor: "var(--dc-inverse-accent)",
+                  },
+                }}
               >
-                <FaWhatsapp className="text-base" /> Chat with us
-              </a>
-              <a
+                Chat with us
+              </Button>
+              <Button
+                component="a"
                 href={instagramUrl(settings.instagramHandle)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-extrabold uppercase"
-                style={{ borderColor: "var(--dc-inverse-text)" }}
+                {...external}
+                startIcon={<Instagram />}
+                sx={{
+                  ...pillSx,
+                  border: `2px solid ${INVERSE_LINE}`,
+                  color: "inherit",
+                  textTransform: "none",
+                }}
               >
-                <FaInstagram className="text-base" /> @{settings.instagramHandle}
-              </a>
-              <a
+                @{settings.instagramHandle}
+              </Button>
+              <Button
+                component="a"
                 href={settings.facebookUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-extrabold uppercase"
-                style={{ borderColor: "var(--dc-inverse-text)" }}
+                {...external}
+                startIcon={<Facebook />}
+                sx={{
+                  ...pillSx,
+                  border: `2px solid ${INVERSE_LINE}`,
+                  color: "inherit",
+                }}
               >
-                <FaFacebook className="text-base" /> Facebook
-              </a>
-            </div>
-          </div>
+                Facebook
+              </Button>
+            </Stack>
+          </Box>
 
-          <nav aria-label="Shop">
-            <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.2em] opacity-60">Shop</p>
-            <ul className="space-y-2.5">
-              <li>
-                <Link href="/shop" className={linkClass}>
+          <Box component="nav" aria-label="Shop">
+            <Typography sx={heading}>Shop</Typography>
+            <Stack
+              component="ul"
+              spacing={1.25}
+              sx={{ m: 0, p: 0, listStyle: "none" }}
+            >
+              <Box component="li">
+                <MuiLink
+                  component={Link}
+                  href="/shop"
+                  color="inherit"
+                  underline="hover"
+                  sx={linkSx}
+                >
                   Shop all
-                </Link>
-              </li>
+                </MuiLink>
+              </Box>
               {categories.slice(0, 6).map((category) => (
-                <li key={category.id}>
-                  <Link href={`/category/${category.slug}`} className={linkClass}>
+                <Box component="li" key={category.id}>
+                  <MuiLink
+                    component={Link}
+                    href={`/category/${category.slug}`}
+                    color="inherit"
+                    underline="hover"
+                    sx={linkSx}
+                  >
                     {category.name}
-                  </Link>
-                </li>
+                  </MuiLink>
+                </Box>
               ))}
-            </ul>
-          </nav>
+            </Stack>
+          </Box>
 
-          <nav aria-label="Help">
-            <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.2em] opacity-60">Help</p>
-            <ul className="space-y-2.5">
-              <li>
-                <a href={sizeHref} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          <Box component="nav" aria-label="Help">
+            <Typography sx={heading}>Help</Typography>
+            <Stack
+              component="ul"
+              spacing={1.25}
+              sx={{ m: 0, p: 0, listStyle: "none" }}
+            >
+              <Box component="li">
+                <MuiLink
+                  href={sizeHref}
+                  {...external}
+                  color="inherit"
+                  underline="hover"
+                  sx={linkSx}
+                >
                   Size help
-                </a>
-              </li>
-              <li>
-                <a href={chatHref} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                </MuiLink>
+              </Box>
+              <Box component="li">
+                <MuiLink
+                  href={chatHref}
+                  {...external}
+                  color="inherit"
+                  underline="hover"
+                  sx={linkSx}
+                >
                   Order support
-                </a>
-              </li>
-              <li>
-                <Link href="/wishlist" className={linkClass}>
+                </MuiLink>
+              </Box>
+              <Box component="li">
+                <MuiLink
+                  component={Link}
+                  href="/wishlist"
+                  color="inherit"
+                  underline="hover"
+                  sx={linkSx}
+                >
                   Wishlist
-                </Link>
-              </li>
-              <li>
-                <Link href="/profile" className={linkClass}>
+                </MuiLink>
+              </Box>
+              <Box component="li">
+                <MuiLink
+                  component={Link}
+                  href="/profile"
+                  color="inherit"
+                  underline="hover"
+                  sx={linkSx}
+                >
                   My account
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        </div>
+                </MuiLink>
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
 
-        <div
-          className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t-2 pt-6 text-xs font-bold opacity-70"
-          style={{ borderColor: "var(--dc-inverse-text)" }}
+        <Stack
+          direction="row"
+          useFlexGap
+          spacing={2}
+          sx={{
+            mt: 6,
+            pt: 3,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderTop: `2px solid ${INVERSE_LINE}`,
+            fontSize: 12,
+            fontWeight: 700,
+            opacity: 0.7,
+          }}
         >
-          <p>© {new Date().getFullYear()} {STORE.name}. All rights reserved.</p>
-          <button
-            type="button"
+          <Typography sx={{ fontSize: "inherit", fontWeight: "inherit" }}>
+            © {new Date().getFullYear()} {STORE.name}. All rights reserved.
+          </Typography>
+          <Button
+            variant="text"
+            size="small"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="inline-flex items-center gap-1.5 uppercase tracking-wide hover:underline"
+            endIcon={<ArrowUpward fontSize="small" />}
+            sx={{
+              color: "inherit",
+              fontSize: 12,
+              minHeight: 0,
+              p: 0,
+              "&:hover": {
+                bgcolor: "transparent",
+                textDecoration: "underline",
+              },
+            }}
           >
-            Back to top <FiArrowUp />
-          </button>
-        </div>
-      </div>
-    </footer>
+            Back to top
+          </Button>
+        </Stack>
+      </Container>
+    </Box>
   );
 }

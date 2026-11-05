@@ -1,7 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { Box, Button, Card, Skeleton, Stack, Typography } from "@mui/material";
 
 import type { Product } from "@/app/lib/productModel";
 import ProductCard from "./ProductCard";
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: {
+    xs: "repeat(2, 1fr)",
+    sm: "repeat(3, 1fr)",
+    lg: "repeat(4, 1fr)",
+  },
+  gap: { xs: 1.5, sm: 2, lg: 3 },
+} as const;
 
 /*
  * Responsive product grid: 2 cols on phones (in-app browsers),
@@ -19,43 +32,77 @@ export default function ProductGrid({
   skeletonCount?: number;
   /** slug → display name, to label each card */
   categoryNames?: Record<string, string>;
-  empty?: { title: string; description?: string; action?: { label: string; href: string } };
+  empty?: {
+    title: string;
+    description?: string;
+    action?: { label: string; href: string };
+  };
 }) {
-  const grid = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6";
-
   if (loading) {
     return (
-      <div className={grid} aria-busy="true" aria-label="Loading products">
+      <Box sx={grid} aria-busy="true" aria-label="Loading products">
         {Array.from({ length: skeletonCount }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border-2 border-line">
-            <div className="aspect-[3/4] animate-pulse bg-surface-2" />
-            <div className="space-y-2 p-3">
-              <div className="h-3 w-1/2 animate-pulse rounded bg-surface-2" />
-              <div className="h-4 w-4/5 animate-pulse rounded bg-surface-2" />
-              <div className="h-4 w-1/3 animate-pulse rounded bg-surface-2" />
-            </div>
-          </div>
+          <Card
+            key={i}
+            sx={{ borderRadius: 3, border: "2px solid var(--dc-line)" }}
+          >
+            <Skeleton
+              variant="rectangular"
+              animation="pulse"
+              sx={{ height: "auto", aspectRatio: "3 / 4" }}
+            />
+            <Stack spacing={1} sx={{ p: 1.5 }}>
+              <Skeleton variant="rounded" height={12} width="50%" />
+              <Skeleton variant="rounded" height={16} width="80%" />
+              <Skeleton variant="rounded" height={16} width="33%" />
+            </Stack>
+          </Card>
         ))}
-      </div>
+      </Box>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-line px-6 py-16 text-center">
-        <p className="font-display text-2xl font-bold">{empty?.title ?? "Nothing here yet"}</p>
-        {empty?.description && <p className="max-w-sm text-sm text-muted">{empty.description}</p>}
-        {empty?.action && (
-          <Link href={empty.action.href} className="btn-brutal btn-primary btn-sm mt-2">
-            {empty.action.label}
-          </Link>
+      <Stack
+        spacing={1.5}
+        sx={{
+          alignItems: "center",
+          borderRadius: 3,
+          border: "2px dashed var(--dc-line)",
+          px: 3,
+          py: 8,
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="h4" component="p" sx={{ fontSize: 24 }}>
+          {empty?.title ?? "Nothing here yet"}
+        </Typography>
+        {empty?.description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ maxWidth: 384 }}
+          >
+            {empty.description}
+          </Typography>
         )}
-      </div>
+        {empty?.action && (
+          <Button
+            component={Link}
+            href={empty.action.href}
+            variant="contained"
+            sx={{ mt: 1 }}
+          >
+            {empty.action.label}
+          </Button>
+        )}
+      </Stack>
     );
   }
 
   return (
-    <div className={grid}>
+    <Box sx={grid}>
       {products.map((product, index) => (
         <ProductCard
           key={product.id}
@@ -64,6 +111,6 @@ export default function ProductGrid({
           priority={index < 4}
         />
       ))}
-    </div>
+    </Box>
   );
 }

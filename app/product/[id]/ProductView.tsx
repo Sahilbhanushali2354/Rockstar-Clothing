@@ -2,8 +2,35 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { FiArrowLeft, FiCheck, FiHeart, FiMinus, FiPlus, FiShoppingBag } from "react-icons/fi";
-import { FaWhatsapp } from "react-icons/fa";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Breadcrumbs,
+  Button,
+  ButtonBase,
+  Card,
+  Chip,
+  IconButton,
+  Link as MuiLink,
+  Skeleton,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
+import { keyframes } from "@mui/material/styles";
+import {
+  Add,
+  ArrowBack,
+  Check,
+  Favorite,
+  FavoriteBorder,
+  Remove,
+  ShoppingBagOutlined,
+  WhatsApp,
+} from "@mui/icons-material";
 
 import StoreShell, { Container } from "@/app/components/store/StoreShell";
 import SectionHeader from "@/app/components/store/SectionHeader";
@@ -29,6 +56,12 @@ import { addToCart } from "@/app/lib/features/cart/cartSlice";
 import { toggleWishlist } from "@/app/lib/features/wishlist/wishlistSlice";
 import { useAppDispatch, useAppSelector } from "@/app/lib/hooks";
 import { STORE } from "@/app/theme/tokens";
+
+const DISPLAY_FONT = "var(--font-display), var(--font-body), sans-serif";
+
+const pulse = keyframes`
+  50% { opacity: 0.5; }
+`;
 
 // Products saved without stock info fall back to default sizes, all available.
 const UNTRACKED_STOCK = 99;
@@ -62,12 +95,16 @@ export default function ProductView({
   const dispatch = useAppDispatch();
   const { categories } = useCategories();
 
-  const [product, setProduct] = useState<Product | null>(initialProduct ?? null);
+  const [product, setProduct] = useState<Product | null>(
+    initialProduct ?? null,
+  );
   const [related, setRelated] = useState<Product[]>(initialRelated);
   const [loading, setLoading] = useState(!initialProduct);
   const [notFound, setNotFound] = useState(false);
 
-  const [selectedSize, setSelectedSize] = useState(() => (initialProduct ? firstAvailableSize(initialProduct) : ""));
+  const [selectedSize, setSelectedSize] = useState(() =>
+    initialProduct ? firstAvailableSize(initialProduct) : "",
+  );
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [added, setAdded] = useState(false);
@@ -75,7 +112,9 @@ export default function ProductView({
   const tracked = useRef(false);
 
   const isWishlisted = useAppSelector((state) =>
-    product ? state.wishlist.items.some((item) => item.id === product.id) : false,
+    product
+      ? state.wishlist.items.some((item) => item.id === product.id)
+      : false,
   );
 
   useEffect(() => {
@@ -96,7 +135,9 @@ export default function ProductView({
         setProduct(found);
         // Keep the shopper's size if it's still in stock; otherwise pick one that is.
         setSelectedSize((current) => {
-          const still = getSizeOptions(found).find((size) => size.label === current && size.stock > 0);
+          const still = getSizeOptions(found).find(
+            (size) => size.label === current && size.stock > 0,
+          );
           return still ? current : firstAvailableSize(found);
         });
 
@@ -114,7 +155,13 @@ export default function ProductView({
 
         if (initialRelated.length === 0) {
           getActiveProducts(found.category)
-            .then((list) => active && setRelated(list.filter((item) => item.id !== found.id).slice(0, 4)))
+            .then(
+              (list) =>
+                active &&
+                setRelated(
+                  list.filter((item) => item.id !== found.id).slice(0, 4),
+                ),
+            )
             .catch(() => undefined);
         }
       } catch (error) {
@@ -136,17 +183,30 @@ export default function ProductView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
-  const sizeOptions = useMemo(() => (product ? getSizeOptions(product) : []), [product]);
-  const selectedStock = sizeOptions.find((size) => size.label === selectedSize)?.stock ?? 0;
-  const soldOut = sizeOptions.length > 0 && sizeOptions.every((size) => size.stock <= 0);
+  const sizeOptions = useMemo(
+    () => (product ? getSizeOptions(product) : []),
+    [product],
+  );
+  const selectedStock =
+    sizeOptions.find((size) => size.label === selectedSize)?.stock ?? 0;
+  const soldOut =
+    sizeOptions.length > 0 && sizeOptions.every((size) => size.stock <= 0);
   const canBuy = !soldOut && selectedStock > 0;
 
   const categoryName = product
-    ? categories.find((category) => category.slug === product.category)?.name ?? slugToLabel(product.category)
+    ? (categories.find((category) => category.slug === product.category)
+        ?.name ?? slugToLabel(product.category))
     : "";
 
   const whatsAppItems = product
-    ? [{ name: product.title, price: product.price, quantity, size: selectedSize }]
+    ? [
+        {
+          name: product.title,
+          price: product.price,
+          quantity,
+          size: selectedSize,
+        },
+      ]
     : [];
 
   const handleAddToCart = () => {
@@ -204,16 +264,26 @@ export default function ProductView({
   if (loading) {
     return (
       <StoreShell>
-        <div className="grid gap-8 py-8 md:grid-cols-2 lg:gap-14 lg:py-12">
-          <div className="aspect-[4/5] animate-pulse rounded-2xl bg-surface-2" />
-          <div className="space-y-4">
-            <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
-            <div className="h-12 w-4/5 animate-pulse rounded bg-surface-2" />
-            <div className="h-8 w-32 animate-pulse rounded bg-surface-2" />
-            <div className="h-24 animate-pulse rounded bg-surface-2" />
-            <div className="h-14 animate-pulse rounded bg-surface-2" />
-          </div>
-        </div>
+        <Box
+          sx={{
+            display: "grid",
+            gap: { xs: 4, lg: 7 },
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            py: { xs: 4, lg: 6 },
+          }}
+        >
+          <Skeleton
+            variant="rounded"
+            sx={{ height: "auto", aspectRatio: "4 / 5", borderRadius: 4 }}
+          />
+          <Stack spacing={2}>
+            <Skeleton variant="rounded" height={16} width={96} />
+            <Skeleton variant="rounded" height={48} width="80%" />
+            <Skeleton variant="rounded" height={32} width={128} />
+            <Skeleton variant="rounded" height={96} />
+            <Skeleton variant="rounded" height={56} />
+          </Stack>
+        </Box>
       </StoreShell>
     );
   }
@@ -222,15 +292,34 @@ export default function ProductView({
   if (notFound || !product) {
     return (
       <StoreShell>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 py-16 text-center">
-          <p className="font-display text-6xl font-bold">
-            Gone <span className="dc-highlight">fast.</span>
-          </p>
-          <p className="max-w-sm text-muted">This piece isn&apos;t available anymore, or the link is broken.</p>
-          <Link href="/shop" className="btn-brutal btn-primary">
+        <Stack
+          spacing={2}
+          sx={{
+            minHeight: "60vh",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 8,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h1" component="p" sx={{ fontSize: 60 }}>
+            Gone{" "}
+            <Box component="span" className="dc-highlight">
+              fast.
+            </Box>
+          </Typography>
+          <Typography color="text.secondary" sx={{ maxWidth: 384 }}>
+            This piece isn&apos;t available anymore, or the link is broken.
+          </Typography>
+          <Button
+            component={Link}
+            href="/shop"
+            variant="contained"
+            size="large"
+          >
             Shop what&apos;s live →
-          </Link>
-        </div>
+          </Button>
+        </Stack>
       </StoreShell>
     );
   }
@@ -239,172 +328,413 @@ export default function ProductView({
     `Hey ${STORE.name}! 👋 Which size should I take in "${product.title}"? My usual size is: `,
   );
 
+  const label = {
+    fontSize: 14,
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.025em",
+  } as const;
+  const badge = { height: 22, borderRadius: 1, border: "1.5px solid" } as const;
+
   return (
     <StoreShell container={false} stickyCta>
-      <Container className="py-5 sm:py-8">
+      <Container sx={{ py: { xs: 2.5, sm: 4 } }}>
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-sm font-bold text-muted">
-          <Link href={`/category/${product.category}`} className="inline-flex items-center gap-1.5 hover:text-fg">
-            <FiArrowLeft /> {categoryName}
-          </Link>
-        </nav>
+        <Breadcrumbs aria-label="Breadcrumb" sx={{ mb: 2.5 }}>
+          <MuiLink
+            component={Link}
+            href={`/category/${product.category}`}
+            color="text.secondary"
+            underline="none"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.75,
+              fontSize: 14,
+              fontWeight: 700,
+              "&:hover": { color: "text.primary" },
+            }}
+          >
+            <ArrowBack fontSize="small" /> {categoryName}
+          </MuiLink>
+        </Breadcrumbs>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:gap-14">
+        <Box
+          sx={{
+            display: "grid",
+            gap: { xs: 4, lg: 7 },
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          }}
+        >
           {/* ================= GALLERY ================= */}
-          <div className="min-w-0 md:sticky md:top-24 md:self-start">
-            <div className="relative overflow-hidden rounded-2xl border-2 border-edge bg-surface-2">
-              <div
+          <Box
+            sx={{
+              minWidth: 0,
+              position: { md: "sticky" },
+              top: { md: 96 },
+              alignSelf: { md: "start" },
+            }}
+          >
+            <Box
+              sx={{
+                position: "relative",
+                overflow: "hidden",
+                borderRadius: 4,
+                border: "2px solid var(--dc-edge)",
+                bgcolor: "var(--dc-surface-2)",
+              }}
+            >
+              <Box
                 ref={galleryRef}
                 onScroll={onGalleryScroll}
-                className="flex aspect-[4/5] snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                sx={{
+                  display: "flex",
+                  aspectRatio: "4 / 5",
+                  overflowX: "auto",
+                  scrollSnapType: "x mandatory",
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
+                }}
               >
-                {(product.images.length ? product.images : [undefined]).map((image, index) => (
-                  <div key={image?.publicId || image?.url || index} className="relative h-full w-full shrink-0 snap-center">
-                    {image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={imageUrl(image, 1200, "4:5")}
-                        srcSet={[600, 900, 1200].map((w) => `${imageUrl(image, w, "4:5")} ${w}w`).join(", ")}
-                        sizes="(min-width: 768px) 50vw, 100vw"
-                        alt={`${product.title} — photo ${index + 1}`}
-                        loading={index === 0 ? "eager" : "lazy"}
-                        fetchPriority={index === 0 ? "high" : "auto"}
-                        className={`h-full w-full object-contain ${soldOut ? "grayscale" : ""}`}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted">No photo</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                {(product.images.length ? product.images : [undefined]).map(
+                  (image, index) => (
+                    <Box
+                      key={image?.publicId || image?.url || index}
+                      sx={{
+                        position: "relative",
+                        height: "100%",
+                        width: "100%",
+                        flexShrink: 0,
+                        scrollSnapAlign: "center",
+                      }}
+                    >
+                      {image ? (
+                        <Box
+                          component="img"
+                          src={imageUrl(image, 1200, "4:5")}
+                          srcSet={[600, 900, 1200]
+                            .map((w) => `${imageUrl(image, w, "4:5")} ${w}w`)
+                            .join(", ")}
+                          sizes="(min-width: 768px) 50vw, 100vw"
+                          alt={`${product.title} — photo ${index + 1}`}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          fetchPriority={index === 0 ? "high" : "auto"}
+                          sx={{
+                            display: "block",
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            ...(soldOut && { filter: "grayscale(1)" }),
+                          }}
+                        />
+                      ) : (
+                        <Stack
+                          sx={{
+                            height: "100%",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "text.secondary",
+                          }}
+                        >
+                          No photo
+                        </Stack>
+                      )}
+                    </Box>
+                  ),
+                )}
+              </Box>
 
-              <div className="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">
+              <Stack
+                spacing={0.75}
+                sx={{
+                  pointerEvents: "none",
+                  position: "absolute",
+                  left: 12,
+                  top: 12,
+                  alignItems: "flex-start",
+                }}
+              >
                 {soldOut ? (
-                  <span className="dc-badge dc-badge-ink">Sold out</span>
+                  <Chip
+                    label="Sold out"
+                    size="small"
+                    color="secondary"
+                    sx={badge}
+                  />
                 ) : product.featured ? (
-                  <span className="dc-badge dc-badge-live">New drop</span>
+                  <Chip
+                    label="New drop"
+                    size="small"
+                    color="primary"
+                    sx={{ ...badge, borderColor: "var(--dc-ink)" }}
+                  />
                 ) : null}
-              </div>
+              </Stack>
 
               {product.images.length > 1 && (
-                <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5 md:hidden" aria-hidden>
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  aria-hidden
+                  sx={{
+                    position: "absolute",
+                    insetInline: 0,
+                    bottom: 12,
+                    justifyContent: "center",
+                    display: { md: "none" },
+                  }}
+                >
                   {product.images.map((_, index) => (
-                    <span
+                    <Box
                       key={index}
-                      className={`h-2 rounded-full border border-ink transition-all ${
-                        index === activeImage ? "w-6 bg-acid" : "w-2 bg-paper"
-                      }`}
+                      sx={{
+                        height: 8,
+                        width: index === activeImage ? 24 : 8,
+                        borderRadius: 999,
+                        border: "1px solid var(--dc-ink)",
+                        bgcolor:
+                          index === activeImage
+                            ? "var(--dc-acid)"
+                            : "var(--dc-paper)",
+                        transition: "all 150ms",
+                      }}
                     />
                   ))}
-                </div>
+                </Stack>
               )}
-            </div>
+            </Box>
 
             {product.images.length > 1 && (
-              <div className="mt-3 hidden gap-2 md:flex">
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 1.5, display: { xs: "none", md: "flex" } }}
+              >
                 {product.images.map((image, index) => (
-                  <button
+                  <ButtonBase
                     key={image.publicId || image.url}
-                    type="button"
                     onClick={() => goToImage(index)}
                     aria-label={`Show photo ${index + 1}`}
                     aria-pressed={index === activeImage}
-                    className={`aspect-[4/5] w-16 overflow-hidden rounded-lg border-2 transition-colors ${
-                      index === activeImage ? "border-edge" : "border-transparent opacity-60 hover:opacity-100"
-                    }`}
+                    sx={{
+                      aspectRatio: "4 / 5",
+                      width: 64,
+                      overflow: "hidden",
+                      borderRadius: 2,
+                      border: "2px solid",
+                      borderColor:
+                        index === activeImage
+                          ? "var(--dc-edge)"
+                          : "transparent",
+                      opacity: index === activeImage ? 1 : 0.6,
+                      transition: "opacity 150ms, border-color 150ms",
+                      "&:hover": { opacity: 1 },
+                    }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageUrl(image, 160, "4:5")} alt="" loading="lazy" className="h-full w-full object-contain" />
-                  </button>
+                    <Box
+                      component="img"
+                      src={imageUrl(image, 160, "4:5")}
+                      alt=""
+                      loading="lazy"
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  </ButtonBase>
                 ))}
-              </div>
+              </Stack>
             )}
-          </div>
+          </Box>
 
           {/* ================= INFO ================= */}
-          <div className="min-w-0">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted">{categoryName}</p>
-            <h1 className="mt-2 font-display text-4xl font-bold leading-[0.95] tracking-tight sm:text-5xl">
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              color="text.secondary"
+              sx={{
+                fontSize: 12,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.2em",
+              }}
+            >
+              {categoryName}
+            </Typography>
+            <Typography
+              variant="h1"
+              sx={{ mt: 1, fontSize: { xs: 36, sm: 48 }, lineHeight: 0.95 }}
+            >
               {product.title}
-            </h1>
-            <Price price={product.price} compareAtPrice={product.compareAtPrice} size="lg" className="mt-4" />
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Price
+                price={product.price}
+                compareAtPrice={product.compareAtPrice}
+                size="lg"
+              />
+            </Box>
 
             {/* Size */}
-            <div className="mt-8">
-              <div className="mb-3 flex items-baseline justify-between">
-                <p className="text-sm font-extrabold uppercase tracking-wide">
-                  Size{selectedSize && <span className="ml-2 text-muted">— {selectedSize}</span>}
-                </p>
-                <a href={sizeHelpHref} target="_blank" rel="noopener noreferrer" className="text-sm font-bold underline underline-offset-4">
+            <Box sx={{ mt: 4 }}>
+              <Stack
+                direction="row"
+                sx={{
+                  mb: 1.5,
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Typography sx={label}>
+                  Size
+                  {selectedSize && (
+                    <Box
+                      component="span"
+                      sx={{ ml: 1, color: "text.secondary" }}
+                    >
+                      — {selectedSize}
+                    </Box>
+                  )}
+                </Typography>
+                <MuiLink
+                  href={sizeHelpHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="inherit"
+                  sx={{ fontSize: 14, fontWeight: 700, textUnderlineOffset: 4 }}
+                >
                   Size help?
-                </a>
-              </div>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
+                </MuiLink>
+              </Stack>
+              <ToggleButtonGroup
+                exclusive
+                value={selectedSize}
+                onChange={(_, value: string | null) => {
+                  if (!value) return;
+                  setSelectedSize(value);
+                  setQuantity(1);
+                }}
+                aria-label="Size"
+                sx={{ flexWrap: "wrap", gap: 1 }}
+              >
                 {sizeOptions.map((size) => {
-                  const selected = size.label === selectedSize;
                   const out = size.stock <= 0;
                   return (
-                    <button
+                    <ToggleButton
                       key={size.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
+                      value={size.label}
                       disabled={out}
-                      onClick={() => {
-                        setSelectedSize(size.label);
-                        setQuantity(1);
+                      sx={{
+                        height: 48,
+                        minWidth: 52,
+                        px: 1.5,
+                        borderRadius: "8px !important",
+                        border: "2px solid var(--dc-edge) !important",
+                        ml: "0 !important",
+                        fontSize: 14,
+                        fontWeight: 800,
+                        color: "text.primary",
+                        transition:
+                          "transform 150ms, box-shadow 150ms, background-color 150ms",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          bgcolor: "transparent",
+                        },
+                        "&.Mui-selected, &.Mui-selected:hover": {
+                          borderColor: "var(--dc-ink) !important",
+                          bgcolor: "var(--dc-acid)",
+                          color: "var(--dc-ink)",
+                          boxShadow: "3px 3px 0 var(--dc-edge)",
+                          transform: "none",
+                        },
+                        "&.Mui-disabled": {
+                          borderColor: "var(--dc-line) !important",
+                          color: "text.secondary",
+                          textDecoration: "line-through",
+                        },
                       }}
-                      className={`relative h-12 min-w-[3.25rem] rounded-lg border-2 px-3 text-sm font-extrabold uppercase transition-[transform,box-shadow,background-color] ${
-                        selected
-                          ? "border-ink bg-acid text-ink shadow-brutal-sm"
-                          : out
-                            ? "cursor-not-allowed border-line text-muted line-through"
-                            : "border-edge hover:-translate-y-0.5"
-                      }`}
                     >
                       {size.label}
-                    </button>
+                    </ToggleButton>
                   );
                 })}
-              </div>
+              </ToggleButtonGroup>
               {canBuy && selectedStock <= LOW_STOCK && (
-                <p className="mt-3 inline-flex items-center gap-2 text-sm font-bold">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-danger" />
+                <Typography
+                  sx={{
+                    mt: 1.5,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 1,
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: "error.main",
+                      animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
+                    }}
+                  />
                   Only {selectedStock} left in {selectedSize}
-                </p>
+                </Typography>
               )}
-            </div>
+            </Box>
 
             {/* Quantity */}
-            <div className="mt-6 flex items-center gap-4">
-              <p className="text-sm font-extrabold uppercase tracking-wide">Qty</p>
-              <div className="flex items-center rounded-lg border-2 border-edge">
-                <button
-                  type="button"
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ mt: 3, alignItems: "center" }}
+            >
+              <Typography sx={label}>Qty</Typography>
+              <Stack
+                direction="row"
+                sx={{
+                  alignItems: "center",
+                  borderRadius: 2,
+                  border: "2px solid var(--dc-edge)",
+                }}
+              >
+                <IconButton
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
-                  className="flex h-11 w-11 items-center justify-center disabled:opacity-30"
                   aria-label="Decrease quantity"
+                  sx={{ width: 44, height: 44 }}
                 >
-                  <FiMinus />
-                </button>
-                <span className="w-8 text-center font-display text-lg font-bold" aria-live="polite">
+                  <Remove fontSize="small" />
+                </IconButton>
+                <Typography
+                  aria-live="polite"
+                  sx={{
+                    width: 32,
+                    textAlign: "center",
+                    fontFamily: DISPLAY_FONT,
+                    fontSize: 18,
+                    fontWeight: 700,
+                  }}
+                >
                   {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.min(selectedStock, q + 1))}
+                </Typography>
+                <IconButton
+                  onClick={() =>
+                    setQuantity((q) => Math.min(selectedStock, q + 1))
+                  }
                   disabled={!canBuy || quantity >= selectedStock}
-                  className="flex h-11 w-11 items-center justify-center disabled:opacity-30"
                   aria-label="Increase quantity"
+                  sx={{ width: 44, height: 44 }}
                 >
-                  <FiPlus />
-                </button>
-              </div>
-            </div>
+                  <Add fontSize="small" />
+                </IconButton>
+              </Stack>
+            </Stack>
 
             {/* Actions */}
-            <div className="mt-8 space-y-3">
+            <Stack spacing={1.5} sx={{ mt: 4 }}>
               <WhatsAppButton
                 items={whatsAppItems}
                 source="product_page"
@@ -413,86 +743,216 @@ export default function ProductView({
                 disabled={!canBuy}
                 label={soldOut ? "Sold out" : "Buy via WhatsApp"}
               />
-              <div className="flex gap-3">
-                <button
-                  type="button"
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="large"
                   onClick={handleAddToCart}
                   disabled={!canBuy}
-                  className="btn-brutal btn-ink flex-1"
+                  startIcon={added ? <Check /> : <ShoppingBagOutlined />}
+                  sx={{ flex: 1 }}
                 >
-                  {added ? <FiCheck /> : <FiShoppingBag />}
                   {added ? "Added" : "Add to cart"}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <IconButton
                   onClick={handleWishlist}
                   aria-pressed={isWishlisted}
-                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                  className={`btn-brutal w-14 px-0 ${isWishlisted ? "btn-primary" : "bg-surface"}`}
+                  aria-label={
+                    isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+                  }
+                  sx={{
+                    width: 56,
+                    height: 52,
+                    borderRadius: 2,
+                    border: "2px solid var(--dc-edge)",
+                    boxShadow: "4px 4px 0 var(--dc-edge)",
+                    bgcolor: isWishlisted
+                      ? "var(--dc-acid)"
+                      : "var(--dc-surface)",
+                    color: isWishlisted ? "var(--dc-ink)" : "text.primary",
+                    "&:hover": {
+                      bgcolor: isWishlisted
+                        ? "var(--dc-acid)"
+                        : "var(--dc-surface)",
+                      transform: "translate(-1px, -1px)",
+                    },
+                  }}
                 >
-                  <FiHeart className={isWishlisted ? "fill-current" : ""} />
-                </button>
-              </div>
+                  {isWishlisted ? <Favorite /> : <FavoriteBorder />}
+                </IconButton>
+              </Stack>
               {added && (
-                <Link href="/cart" className="block text-center text-sm font-bold underline underline-offset-4">
+                <MuiLink
+                  component={Link}
+                  href="/cart"
+                  color="inherit"
+                  sx={{
+                    display: "block",
+                    textAlign: "center",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    textUnderlineOffset: 4,
+                  }}
+                >
                   View cart →
-                </Link>
+                </MuiLink>
               )}
-            </div>
+            </Stack>
 
             {/* How it works */}
-            <div className="mt-8 grid grid-cols-3 overflow-hidden rounded-xl border-2 border-edge text-center">
+            <Box
+              sx={{
+                mt: 4,
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                overflow: "hidden",
+                borderRadius: 3,
+                border: "2px solid var(--dc-edge)",
+                textAlign: "center",
+              }}
+            >
               {[
                 ["WhatsApp", "Order pre-typed"],
                 ["UPI", "Pay securely"],
                 ["Ships", "Across India"],
               ].map(([title, text], index) => (
-                <div key={title} className={`px-2 py-3 ${index === 0 ? "bg-acid text-ink" : ""} ${index > 0 ? "border-l-2 border-edge" : ""}`}>
-                  <p className="text-xs font-extrabold uppercase">{title}</p>
-                  <p className="text-[11px] opacity-70">{text}</p>
-                </div>
+                <Box
+                  key={title}
+                  sx={{
+                    px: 1,
+                    py: 1.5,
+                    ...(index === 0 && {
+                      bgcolor: "var(--dc-acid)",
+                      color: "var(--dc-ink)",
+                    }),
+                    ...(index > 0 && {
+                      borderLeft: "2px solid var(--dc-edge)",
+                    }),
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {title}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, opacity: 0.7 }}>
+                    {text}
+                  </Typography>
+                </Box>
               ))}
-            </div>
+            </Box>
 
             {/* Description */}
             {product.description && (
-              <details open className="group mt-8 border-t-2 border-edge pt-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-extrabold uppercase tracking-wide">
-                  Details
-                  <span className="transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted sm:text-base">{product.description}</p>
-              </details>
+              <Accordion
+                defaultExpanded
+                disableGutters
+                elevation={0}
+                sx={{
+                  mt: 4,
+                  bgcolor: "transparent",
+                  borderTop: "2px solid var(--dc-edge)",
+                  borderRadius: 0,
+                  "&::before": { display: "none" },
+                  "& .Mui-expanded .plus": { transform: "rotate(45deg)" },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={null}
+                  sx={{
+                    px: 0,
+                    pt: 1.5,
+                    minHeight: 0,
+                    "& .MuiAccordionSummary-content": {
+                      m: 0,
+                      justifyContent: "space-between",
+                    },
+                  }}
+                >
+                  <Typography sx={label}>Details</Typography>
+                  <Box
+                    component="span"
+                    className="plus"
+                    sx={{ transition: "transform 150ms" }}
+                  >
+                    +
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 0, pt: 1.5, pb: 0 }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{
+                      whiteSpace: "pre-line",
+                      fontSize: { xs: 14, sm: 16 },
+                      lineHeight: 1.625,
+                    }}
+                  >
+                    {product.description}
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
             )}
 
-            <a
+            <Card
+              component="a"
               href={sizeHelpHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 flex items-center gap-3 rounded-xl border-2 border-line p-4 text-sm transition-colors hover:border-edge"
+              sx={{
+                mt: 3,
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                borderRadius: 3,
+                border: "2px solid var(--dc-line)",
+                p: 2,
+                fontSize: 14,
+                color: "inherit",
+                textDecoration: "none",
+                transition: "border-color 150ms",
+                "&:hover": { borderColor: "var(--dc-edge)" },
+              }}
             >
-              <FaWhatsapp className="shrink-0 text-2xl" />
-              <span>
-                <span className="block font-bold">Not sure about fit?</span>
-                <span className="text-muted">Chat with us — we&apos;ll help you pick a size.</span>
-              </span>
-            </a>
-          </div>
-        </div>
+              <WhatsApp sx={{ flexShrink: 0, fontSize: 24 }} />
+              <Box component="span">
+                <Box
+                  component="span"
+                  sx={{ display: "block", fontWeight: 700 }}
+                >
+                  Not sure about fit?
+                </Box>
+                <Box component="span" sx={{ color: "text.secondary" }}>
+                  Chat with us — we&apos;ll help you pick a size.
+                </Box>
+              </Box>
+            </Card>
+          </Box>
+        </Box>
       </Container>
 
       {/* ================= RELATED ================= */}
       {related.length > 0 && (
-        <section className="border-t-2 border-edge py-14 sm:py-20">
+        <Box
+          component="section"
+          sx={{ borderTop: "2px solid var(--dc-edge)", py: { xs: 7, sm: 10 } }}
+        >
           <Container>
             <SectionHeader
               title="You may"
               highlight="also like"
-              action={{ label: `More ${categoryName}`, href: `/category/${product.category}` }}
+              action={{
+                label: `More ${categoryName}`,
+                href: `/category/${product.category}`,
+              }}
             />
             <ProductGrid products={related} />
           </Container>
-        </section>
+        </Box>
       )}
 
       <StickyWhatsAppBar

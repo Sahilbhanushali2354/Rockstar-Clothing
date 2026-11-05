@@ -1,4 +1,10 @@
 import type { ReactNode } from "react";
+import {
+  Box,
+  Container as MuiContainer,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
 
 import Navbar from "../Navbar";
 import Footer from "../Footer";
@@ -20,17 +26,44 @@ export default function StoreShell({
   className?: string;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-bg text-fg">
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        flexDirection: "column",
+        bgcolor: "var(--dc-bg)",
+        color: "var(--dc-text)",
+      }}
+    >
       <Navbar />
-      <main className={`flex-1 ${className}`}>
+      <Box component="main" className={className} sx={{ flex: 1 }}>
         {container ? <Container>{children}</Container> : children}
-      </main>
+      </Box>
       <Footer />
-      {stickyCta && <div className="sticky-cta-spacer" aria-hidden />}
-    </div>
+      {stickyCta && <Box className="sticky-cta-spacer" aria-hidden />}
+    </Box>
   );
 }
 
-export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>;
+export function Container({
+  children,
+  className = "",
+  sx,
+}: {
+  children: ReactNode;
+  className?: string;
+  sx?: SxProps<Theme>;
+}) {
+  return (
+    <MuiContainer
+      maxWidth={false}
+      className={className}
+      sx={[
+        { maxWidth: 1280, px: { xs: 2, sm: 3, lg: 4 } },
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
+    >
+      {children}
+    </MuiContainer>
+  );
 }

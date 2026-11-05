@@ -1,8 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import {
+  Box,
+  Card,
+  CardActionArea,
+  Chip,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import { hasLowStock, isSoldOut, type Product } from "@/app/lib/productModel";
 import { imageUrl } from "@/app/lib/imageUrl";
 import Price from "./Price";
+
+const badge = { height: 20, borderRadius: 1, border: "1.5px solid" } as const;
 
 /*
  * The one product card used everywhere (shop, category, home, related).
@@ -25,56 +37,160 @@ export default function ProductCard({
   const hover = product.images[1];
 
   return (
-    <Link
-      href={href}
-      className="group flex min-w-0 flex-col rounded-xl border-2 border-edge bg-surface transition-[transform,box-shadow] duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-brutal focus-visible:shadow-brutal"
+    <Card
+      sx={{
+        minWidth: 0,
+        borderRadius: 3,
+        border: "2px solid var(--dc-edge)",
+        transition: "transform 150ms, box-shadow 150ms",
+        "&:hover, &:focus-within": {
+          transform: "translate(-2px, -2px)",
+          boxShadow: "4px 4px 0 var(--dc-edge)",
+        },
+        "&:hover .cover": {
+          transform: "scale(1.04)",
+          ...(hover && { opacity: 0 }),
+        },
+        "&:hover .hover-img": { opacity: 1 },
+      }}
     >
-      <div className="relative aspect-[3/4] overflow-hidden rounded-t-[10px] border-b-2 border-edge bg-surface-2">
-        {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl(cover, 600, "3:4")}
-            srcSet={`${imageUrl(cover, 400, "3:4")} 400w, ${imageUrl(cover, 600, "3:4")} 600w, ${imageUrl(cover, 900, "3:4")} 900w`}
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            alt={product.title}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            className={`h-full w-full object-contain transition-[transform,opacity] duration-500 group-hover:scale-[1.04] ${
-              soldOut ? "opacity-60 grayscale" : ""
-            } ${hover ? "group-hover:opacity-0" : ""}`}
-          />
-        )}
-        {hover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl(hover, 600, "3:4")}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            aria-hidden
-            className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          />
-        )}
+      <CardActionArea
+        component={Link}
+        href={href}
+        disableRipple
+        sx={{
+          display: "flex",
+          height: "100%",
+          flexDirection: "column",
+          alignItems: "stretch",
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            aspectRatio: "3 / 4",
+            overflow: "hidden",
+            borderBottom: "2px solid var(--dc-edge)",
+            bgcolor: "var(--dc-surface-2)",
+          }}
+        >
+          {cover && (
+            <Box
+              component="img"
+              className="cover"
+              src={imageUrl(cover, 600, "3:4")}
+              srcSet={`${imageUrl(cover, 400, "3:4")} 400w, ${imageUrl(cover, 600, "3:4")} 600w, ${imageUrl(cover, 900, "3:4")} 900w`}
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              alt={product.title}
+              loading={priority ? "eager" : "lazy"}
+              decoding="async"
+              sx={{
+                display: "block",
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                transition: "transform 500ms, opacity 500ms",
+                ...(soldOut && { opacity: 0.6, filter: "grayscale(1)" }),
+              }}
+            />
+          )}
+          {hover && (
+            <Box
+              component="img"
+              className="hover-img"
+              src={imageUrl(hover, 600, "3:4")}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              aria-hidden
+              sx={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                opacity: 0,
+                transition: "opacity 500ms",
+              }}
+            />
+          )}
 
-        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
-          {soldOut ? (
-            <span className="dc-badge dc-badge-ink">Sold out</span>
-          ) : product.featured ? (
-            <span className="dc-badge dc-badge-live">New drop</span>
-          ) : null}
-          {lowStock && <span className="dc-badge">Few left</span>}
-        </div>
-      </div>
+          <Stack
+            spacing={0.5}
+            sx={{
+              position: "absolute",
+              left: 8,
+              top: 8,
+              alignItems: "flex-start",
+            }}
+          >
+            {soldOut ? (
+              <Chip
+                label="Sold out"
+                size="small"
+                color="secondary"
+                sx={badge}
+              />
+            ) : product.featured ? (
+              <Chip
+                label="New drop"
+                size="small"
+                color="primary"
+                sx={{ ...badge, borderColor: "var(--dc-ink)" }}
+              />
+            ) : null}
+            {lowStock && (
+              <Chip
+                label="Few left"
+                size="small"
+                sx={{
+                  ...badge,
+                  bgcolor: "var(--dc-surface)",
+                  borderColor: "var(--dc-edge)",
+                }}
+              />
+            )}
+          </Stack>
+        </Box>
 
-      <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
-        {categoryName && (
-          <p className="truncate text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted sm:text-[11px]">
-            {categoryName}
-          </p>
-        )}
-        <h3 className="line-clamp-2 text-sm font-bold leading-snug sm:text-base">{product.title}</h3>
-        <Price price={product.price} compareAtPrice={product.compareAtPrice} size="sm" className="mt-auto pt-1" />
-      </div>
-    </Link>
+        <Stack spacing={0.5} sx={{ flex: 1, p: { xs: 1.25, sm: 1.75 } }}>
+          {categoryName && (
+            <Typography
+              noWrap
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: 10, sm: 11 },
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+              }}
+            >
+              {categoryName}
+            </Typography>
+          )}
+          <Typography
+            component="h3"
+            sx={{
+              fontSize: { xs: 14, sm: 16 },
+              fontWeight: 700,
+              lineHeight: 1.375,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {product.title}
+          </Typography>
+          <Box sx={{ mt: "auto !important", pt: 0.5 }}>
+            <Price
+              price={product.price}
+              compareAtPrice={product.compareAtPrice}
+              size="sm"
+            />
+          </Box>
+        </Stack>
+      </CardActionArea>
+    </Card>
   );
 }

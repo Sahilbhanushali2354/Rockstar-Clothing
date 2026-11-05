@@ -3,15 +3,36 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut, updateProfile, type User } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  signOut,
+  updateProfile,
+  type User,
+} from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { FiHeart, FiLogOut, FiShoppingBag } from "react-icons/fi";
-import { FaWhatsapp } from "react-icons/fa";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  InputAdornment,
+  Paper,
+  Skeleton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  FavoriteBorder,
+  Logout,
+  ShoppingBagOutlined,
+  WhatsApp,
+} from "@mui/icons-material";
 
 import { auth, FStore } from "@/firebase/firebase.config";
 import StoreShell from "../components/store/StoreShell";
 import SectionHeader from "../components/store/SectionHeader";
-import { Field } from "../components/ui";
 import { useAppSelector } from "../lib/hooks";
 import { buildWhatsAppUrl } from "../lib/whatsapp";
 import { STORE } from "../theme/tokens";
@@ -22,18 +43,29 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
-  const [profile, setProfile] = useState<Profile>({ name: "", phone: "", role: "customer" });
+  const [profile, setProfile] = useState<Profile>({
+    name: "",
+    phone: "",
+    role: "customer",
+  });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "ok" | "error";
+    text: string;
+  } | null>(null);
 
-  const cartCount = useAppSelector((state) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+  const cartCount = useAppSelector((state) =>
+    state.cart.items.reduce((sum, item) => sum + item.quantity, 0),
+  );
   const wishlistCount = useAppSelector((state) => state.wishlist.items.length);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const snapshot = await getDoc(doc(FStore, "users", firebaseUser.uid)).catch(() => null);
+        const snapshot = await getDoc(
+          doc(FStore, "users", firebaseUser.uid),
+        ).catch(() => null);
         const data = snapshot?.data();
         setProfile({
           name: String(data?.name ?? firebaseUser.displayName ?? ""),
@@ -51,7 +83,10 @@ export default function ProfilePage() {
     if (!user) return;
 
     if (profile.phone && !/^[6-9]\d{9}$/.test(profile.phone)) {
-      setMessage({ type: "error", text: "Enter a 10-digit Indian mobile number." });
+      setMessage({
+        type: "error",
+        text: "Enter a 10-digit Indian mobile number.",
+      });
       return;
     }
 
@@ -89,10 +124,10 @@ export default function ProfilePage() {
   if (checking) {
     return (
       <StoreShell className="py-10 sm:py-14">
-        <div className="mx-auto max-w-2xl space-y-4">
-          <div className="h-14 w-2/3 animate-pulse rounded-lg bg-surface-2" />
-          <div className="h-64 animate-pulse rounded-2xl bg-surface-2" />
-        </div>
+        <Stack spacing={2} sx={{ mx: "auto", maxWidth: 672 }}>
+          <Skeleton variant="rounded" height={56} width="66%" />
+          <Skeleton variant="rounded" height={256} sx={{ borderRadius: 4 }} />
+        </Stack>
       </StoreShell>
     );
   }
@@ -101,20 +136,58 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <StoreShell className="py-10 sm:py-14">
-        <div className="mx-auto flex max-w-lg flex-col items-center gap-5 rounded-2xl border-2 border-edge bg-surface px-6 py-14 text-center shadow-brutal-lg">
-          <SectionHeader as="h1" align="center" title="Join the" highlight="club" description="Log in to save your details for faster WhatsApp orders." />
-          <div className="-mt-4 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/auth/login?redirect=/profile" className="btn-brutal btn-ink">
+        <Paper
+          elevation={0}
+          sx={{
+            mx: "auto",
+            maxWidth: 512,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2.5,
+            borderRadius: 4,
+            border: "2px solid var(--dc-edge)",
+            px: 3,
+            py: 7,
+            textAlign: "center",
+            boxShadow: "6px 6px 0 var(--dc-edge)",
+          }}
+        >
+          <SectionHeader
+            as="h1"
+            align="center"
+            title="Join the"
+            highlight="club"
+            description="Log in to save your details for faster WhatsApp orders."
+          />
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ mt: -2, width: "100%", justifyContent: { sm: "center" } }}
+          >
+            <Button
+              component={Link}
+              href="/auth/login?redirect=/profile"
+              variant="contained"
+              color="secondary"
+              size="large"
+            >
               Log in
-            </Link>
-            <Link href="/auth/signup?redirect=/profile" className="btn-brutal btn-primary">
+            </Button>
+            <Button
+              component={Link}
+              href="/auth/signup?redirect=/profile"
+              variant="contained"
+              size="large"
+            >
               Create account
-            </Link>
-          </div>
-          <p className="text-sm text-muted">
-            No account needed to order — just tap <strong>Buy via WhatsApp</strong> on any product.
-          </p>
-        </div>
+            </Button>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            No account needed to order — just tap{" "}
+            <Box component="strong">Buy via WhatsApp</Box> on any product.
+          </Typography>
+        </Paper>
       </StoreShell>
     );
   }
@@ -122,96 +195,220 @@ export default function ProfilePage() {
   /* ---------- signed in ---------- */
   const firstName = (profile.name || user.email || "there").split(" ")[0];
 
+  const tile = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 1.5,
+    borderRadius: 3,
+    border: "2px solid var(--dc-edge)",
+    bgcolor: "var(--dc-surface)",
+    p: 2,
+    fontSize: 16,
+    fontWeight: 700,
+    textTransform: "none",
+    letterSpacing: 0,
+    color: "text.primary",
+    boxShadow: "none",
+    transition: "box-shadow 150ms",
+    "&:hover": {
+      bgcolor: "var(--dc-surface)",
+      boxShadow: "4px 4px 0 var(--dc-edge)",
+      transform: "none",
+    },
+  } as const;
+
+  const countChip = {
+    height: 22,
+    borderRadius: 1,
+    border: "1.5px solid var(--dc-edge)",
+    bgcolor: "var(--dc-surface)",
+  } as const;
+
   return (
     <StoreShell className="py-10 sm:py-14">
-      <div className="mx-auto max-w-3xl">
-        <SectionHeader as="h1" eyebrow="Account" title="Hey" highlight={`${firstName} 👋`} />
+      <Box sx={{ mx: "auto", maxWidth: 768 }}>
+        <SectionHeader
+          as="h1"
+          eyebrow="Account"
+          title="Hey"
+          highlight={`${firstName} 👋`}
+        />
 
-        <div className="grid gap-6 md:grid-cols-[1fr_260px]">
-          <form onSubmit={handleSave} noValidate className="space-y-4 rounded-2xl border-2 border-edge bg-surface p-5 sm:p-6">
-            <h2 className="font-display text-xl font-bold">Your details</h2>
+        <Box
+          sx={{
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", md: "1fr 260px" },
+          }}
+        >
+          <Paper
+            component="form"
+            onSubmit={handleSave}
+            noValidate
+            elevation={0}
+            sx={{
+              borderRadius: 4,
+              border: "2px solid var(--dc-edge)",
+              p: { xs: 2.5, sm: 3 },
+            }}
+          >
+            <Stack spacing={2.5}>
+              <Typography variant="h6" component="h2" sx={{ fontSize: 20 }}>
+                Your details
+              </Typography>
 
-            <Field label="Name" htmlFor="name">
-              <input
+              <TextField
                 id="name"
+                label="Name"
                 autoComplete="name"
                 value={profile.name}
-                onChange={(event) => setProfile((p) => ({ ...p, name: event.target.value }))}
-                className="dc-input"
+                onChange={(event) =>
+                  setProfile((p) => ({ ...p, name: event.target.value }))
+                }
+                fullWidth
               />
-            </Field>
 
-            <Field label="Email" htmlFor="email" help="Contact us on WhatsApp to change your email.">
-              <input id="email" value={user.email ?? ""} disabled className="dc-input opacity-60" />
-            </Field>
+              <TextField
+                id="email"
+                label="Email"
+                value={user.email ?? ""}
+                disabled
+                helperText="Contact us on WhatsApp to change your email."
+                fullWidth
+              />
 
-            <Field label="WhatsApp number" htmlFor="phone" help="We confirm orders on this number.">
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">+91</span>
-                <input
-                  id="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  value={profile.phone}
-                  onChange={(event) =>
-                    setProfile((p) => ({ ...p, phone: event.target.value.replace(/\D/g, "").slice(0, 10) }))
+              <TextField
+                id="phone"
+                label="WhatsApp number"
+                type="tel"
+                autoComplete="tel-national"
+                value={profile.phone}
+                onChange={(event) =>
+                  setProfile((p) => ({
+                    ...p,
+                    phone: event.target.value.replace(/\D/g, "").slice(0, 10),
+                  }))
+                }
+                helperText="We confirm orders on this number."
+                slotProps={{
+                  htmlInput: { inputMode: "numeric" },
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">+91</InputAdornment>
+                    ),
+                  },
+                }}
+                fullWidth
+              />
+
+              {message && (
+                <Alert
+                  severity={message.type === "ok" ? "success" : "error"}
+                  variant="filled"
+                  sx={
+                    message.type === "ok"
+                      ? { bgcolor: "var(--dc-acid)", color: "var(--dc-ink)" }
+                      : undefined
                   }
-                  className="dc-input pl-12"
-                />
-              </div>
-            </Field>
+                >
+                  {message.text}
+                </Alert>
+              )}
 
-            {message && (
-              <p
-                role={message.type === "error" ? "alert" : "status"}
-                className={`rounded-lg p-3 text-sm font-bold ${message.type === "ok" ? "bg-acid text-ink" : "bg-danger text-white"}`}
+              <Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={saving}
+                  startIcon={
+                    saving ? <CircularProgress size={18} /> : undefined
+                  }
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  {saving ? "Saving…" : "Save details"}
+                </Button>
+              </Box>
+            </Stack>
+          </Paper>
+
+          <Stack component="aside" spacing={1.5}>
+            <Button component={Link} href="/wishlist" sx={tile}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center" }}
               >
-                {message.text}
-              </p>
-            )}
-
-            <button type="submit" disabled={saving} className="btn-brutal btn-primary w-full sm:w-auto">
-              {saving ? "Saving…" : "Save details"}
-            </button>
-          </form>
-
-          <aside className="space-y-3">
-            <Link href="/wishlist" className="flex items-center justify-between rounded-xl border-2 border-edge bg-surface p-4 font-bold transition-shadow hover:shadow-brutal">
-              <span className="flex items-center gap-3">
-                <FiHeart /> Wishlist
-              </span>
-              <span className="dc-badge">{wishlistCount}</span>
-            </Link>
-            <Link href="/cart" className="flex items-center justify-between rounded-xl border-2 border-edge bg-surface p-4 font-bold transition-shadow hover:shadow-brutal">
-              <span className="flex items-center gap-3">
-                <FiShoppingBag /> Cart
-              </span>
-              <span className="dc-badge">{cartCount}</span>
-            </Link>
-            <a
-              href={buildWhatsAppUrl(`Hey ${STORE.name}! 👋 I need help with my order.`)}
+                <FavoriteBorder fontSize="small" />{" "}
+                <Box component="span">Wishlist</Box>
+              </Stack>
+              <Chip size="small" label={wishlistCount} sx={countChip} />
+            </Button>
+            <Button component={Link} href="/cart" sx={tile}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center" }}
+              >
+                <ShoppingBagOutlined fontSize="small" />{" "}
+                <Box component="span">Cart</Box>
+              </Stack>
+              <Chip size="small" label={cartCount} sx={countChip} />
+            </Button>
+            <Button
+              component="a"
+              href={buildWhatsAppUrl(
+                `Hey ${STORE.name}! 👋 I need help with my order.`,
+              )}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl border-2 border-ink bg-acid p-4 font-bold text-ink"
+              startIcon={<WhatsApp />}
+              sx={{
+                ...tile,
+                justifyContent: "flex-start",
+                borderColor: "var(--dc-ink)",
+                bgcolor: "var(--dc-acid)",
+                color: "var(--dc-ink)",
+                "&:hover": { ...tile["&:hover"], bgcolor: "var(--dc-acid)" },
+              }}
             >
-              <FaWhatsapp className="text-lg" /> Order help
-            </a>
+              Order help
+            </Button>
             {profile.role === "admin" && (
-              <Link href="/admin" className="flex items-center gap-3 rounded-xl border-2 border-edge p-4 font-bold">
+              <Button
+                component={Link}
+                href="/admin"
+                sx={{
+                  ...tile,
+                  justifyContent: "flex-start",
+                  bgcolor: "transparent",
+                }}
+              >
                 Admin dashboard →
-              </Link>
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-xl border-2 border-line p-4 font-bold text-muted hover:border-danger hover:text-danger"
+              startIcon={<Logout />}
+              sx={{
+                ...tile,
+                justifyContent: "flex-start",
+                borderColor: "var(--dc-line)",
+                bgcolor: "transparent",
+                color: "text.secondary",
+                "&:hover": {
+                  borderColor: "error.main",
+                  color: "error.main",
+                  bgcolor: "transparent",
+                },
+              }}
             >
-              <FiLogOut /> Log out
-            </button>
-          </aside>
-        </div>
-      </div>
+              Log out
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
     </StoreShell>
   );
 }

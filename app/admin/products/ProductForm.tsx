@@ -19,18 +19,40 @@ import {
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import {
-  FiArrowLeft,
-  FiChevronLeft,
-  FiChevronRight,
-  FiExternalLink,
-  FiImage,
-  FiPlus,
-  FiTrash2,
-  FiX,
-} from "react-icons/fi";
+  Alert,
+  Box,
+  Button,
+  ButtonBase,
+  Card,
+  Chip,
+  CircularProgress,
+  FormControlLabel,
+  FormHelperText,
+  IconButton,
+  InputAdornment,
+  Link as MuiLink,
+  MenuItem,
+  Paper,
+  Skeleton,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  Add,
+  AddPhotoAlternateOutlined,
+  ArrowBack,
+  ChevronLeft,
+  ChevronRight,
+  Close,
+  DeleteOutlined,
+  OpenInNew,
+  Remove,
+} from "@mui/icons-material";
 
 import { FStore } from "@/firebase/firebase.config";
-import { Field, PageHeader, Skeleton, Toggle } from "@/app/components/ui";
+import { PageHeader } from "@/app/components/ui";
 import {
   DEFAULT_SIZE_LABELS,
   LOW_STOCK,
@@ -40,7 +62,11 @@ import {
   type ProductImage,
   type ProductSize,
 } from "@/app/lib/products";
-import { deleteFromCloudinary, imageUrl, uploadToCloudinary } from "@/app/lib/cloudinary";
+import {
+  deleteFromCloudinary,
+  imageUrl,
+  uploadToCloudinary,
+} from "@/app/lib/cloudinary";
 import { revalidateStore } from "@/app/lib/adminApi";
 
 interface CategoryOption {
@@ -82,7 +108,11 @@ const defaultSizes = (): ProductSize[] =>
 
 const MAX_IMAGE_MB = 10;
 
-export default function ProductForm({ editId = null }: { editId?: string | null }) {
+export default function ProductForm({
+  editId = null,
+}: {
+  editId?: string | null;
+}) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -99,7 +129,6 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
 
   // Cloudinary images removed in this session — deleted after a successful save.
   const removedIds = useRef<string[]>([]);
-  const fileInput = useRef<HTMLInputElement | null>(null);
 
   /* ---------- load categories + product (edit mode) ---------- */
   useEffect(() => {
@@ -129,8 +158,15 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
         if (!active) return;
 
         // Keep a legacy category selectable even if no category doc exists for it.
-        if (product?.category && !list.some((c) => c.slug === product.category)) {
-          list.push({ slug: product.category, name: product.category, order: 999 });
+        if (
+          product?.category &&
+          !list.some((c) => c.slug === product.category)
+        ) {
+          list.push({
+            slug: product.category,
+            name: product.category,
+            order: 999,
+          });
         }
         setCategories(list);
 
@@ -141,7 +177,9 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
             title: product.title,
             description: product.description,
             price: String(product.price || ""),
-            compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
+            compareAtPrice: product.compareAtPrice
+              ? String(product.compareAtPrice)
+              : "",
             category: product.category,
             subcategory: product.subcategory,
             active: product.active,
@@ -172,7 +210,9 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
     setErrors((current) => ({ ...current, [key]: "" }));
   };
 
-  const onInput = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+  const onInput = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) =>
     setField(event.target.name as keyof FormState, event.target.value as never);
 
   /* ---------- images ---------- */
@@ -181,15 +221,22 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
     event.target.value = "";
 
     const files = all.filter(
-      (file) => file.type.startsWith("image/") && file.size <= MAX_IMAGE_MB * 1024 * 1024,
+      (file) =>
+        file.type.startsWith("image/") &&
+        file.size <= MAX_IMAGE_MB * 1024 * 1024,
     );
     if (files.length < all.length) {
-      toast.warn(`Skipped ${all.length - files.length} file(s): images only, max ${MAX_IMAGE_MB}MB.`);
+      toast.warn(
+        `Skipped ${all.length - files.length} file(s): images only, max ${MAX_IMAGE_MB}MB.`,
+      );
     }
     if (files.length === 0) return;
 
     if (!form.category) {
-      setErrors((current) => ({ ...current, category: "Pick a category before uploading images." }));
+      setErrors((current) => ({
+        ...current,
+        category: "Pick a category before uploading images.",
+      }));
       return;
     }
 
@@ -199,12 +246,17 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
     await Promise.all(
       files.map(async (file) => {
         try {
-          const uploaded = await uploadToCloudinary(file, `products/${form.category}`);
+          const uploaded = await uploadToCloudinary(
+            file,
+            `products/${form.category}`,
+          );
           setImages((current) => [...current, uploaded]);
         } catch (uploadError) {
           console.error(uploadError);
           toast.error(
-            uploadError instanceof Error ? `Upload failed: ${uploadError.message}` : "Upload failed.",
+            uploadError instanceof Error
+              ? `Upload failed: ${uploadError.message}`
+              : "Upload failed.",
           );
         } finally {
           setUploading((count) => count - 1);
@@ -233,7 +285,9 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
 
   /* ---------- sizes ---------- */
   const updateSize = (index: number, patch: Partial<ProductSize>) => {
-    setSizes((current) => current.map((size, i) => (i === index ? { ...size, ...patch } : size)));
+    setSizes((current) =>
+      current.map((size, i) => (i === index ? { ...size, ...patch } : size)),
+    );
     setErrors((current) => ({ ...current, sizes: "" }));
   };
 
@@ -246,7 +300,10 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
     );
   };
 
-  const totalUnits = sizes.reduce((sum, size) => sum + (Number(size.stock) || 0), 0);
+  const totalUnits = sizes.reduce(
+    (sum, size) => sum + (Number(size.stock) || 0),
+    0,
+  );
 
   /* ---------- save ---------- */
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -277,10 +334,15 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
     setErrors(next);
     if (Object.keys(next).length > 0) {
       toast.error("Fix the highlighted fields.");
-      document.querySelector('[aria-invalid="true"], [data-error="true"]')?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      // Wait for the error state to render before scrolling to the first invalid field.
+      requestAnimationFrame(() =>
+        document
+          .querySelector('[aria-invalid="true"], [data-error="true"]')
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          }),
+      );
       return;
     }
 
@@ -337,34 +399,86 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-64" />
-        <Skeleton className="h-48" />
-        <Skeleton className="h-72" />
-      </div>
+      <Stack spacing={2}>
+        <Skeleton variant="rounded" height={48} width={256} />
+        <Skeleton variant="rounded" height={192} />
+        <Skeleton variant="rounded" height={288} />
+      </Stack>
     );
   }
 
   if (notFound) {
     return (
-      <div className="dc-card p-10 text-center">
-        <p className="font-display text-xl font-bold">Product not found</p>
-        <p className="mt-1 text-sm text-muted">It may have been deleted.</p>
-        <Link href="/admin/products" className="btn mt-4">
-          <FiArrowLeft /> Back to products
-        </Link>
-      </div>
+      <Card sx={{ p: 5, textAlign: "center" }}>
+        <Typography variant="h5">Product not found</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          It may have been deleted.
+        </Typography>
+        <Button
+          component={Link}
+          href="/admin/products"
+          variant="outlined"
+          startIcon={<ArrowBack />}
+          sx={{ mt: 2 }}
+        >
+          Back to products
+        </Button>
+      </Card>
     );
   }
 
   const busy = saving || uploading > 0;
-  const submitLabel = uploading > 0 ? `Uploading ${uploading}…` : saving ? "Saving…" : editId ? "Save changes" : "Publish product";
+  const submitLabel =
+    uploading > 0
+      ? `Uploading ${uploading}…`
+      : saving
+        ? "Saving…"
+        : editId
+          ? "Save changes"
+          : "Publish product";
+
+  const submitButton = (
+    <Button
+      type="submit"
+      variant="contained"
+      size="large"
+      fullWidth
+      disabled={busy}
+      startIcon={busy ? <CircularProgress size={18} /> : undefined}
+    >
+      {submitLabel}
+    </Button>
+  );
+
+  const rupee = {
+    input: {
+      startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+    },
+    htmlInput: { min: 0, inputMode: "numeric" as const },
+  };
+
+  const tileButton = {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    color: "#fff",
+    bgcolor: "rgba(0,0,0,0.7)",
+    "&:hover": { bgcolor: "rgba(0,0,0,0.85)" },
+    "&.Mui-disabled": { visibility: "hidden" },
+  } as const;
 
   return (
     <>
-      <Link href="/admin/products" className="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-muted hover:underline">
-        <FiArrowLeft /> Products
-      </Link>
+      <Button
+        component={Link}
+        href="/admin/products"
+        variant="text"
+        size="small"
+        startIcon={<ArrowBack />}
+        sx={{ mb: 2, color: "text.secondary" }}
+      >
+        Products
+      </Button>
 
       <PageHeader
         eyebrow={editId ? "Edit product" : "New product"}
@@ -372,350 +486,585 @@ export default function ProductForm({ editId = null }: { editId?: string | null 
         actions={
           editId ? (
             <>
-              <a href={`/product/${editId}`} target="_blank" rel="noopener noreferrer" className="btn">
-                <FiExternalLink /> View in store
-              </a>
-              <button type="button" onClick={() => router.push("/admin/products/new")} className="btn">
-                <FiPlus /> New
-              </button>
+              <Button
+                component="a"
+                href={`/product/${editId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outlined"
+                startIcon={<OpenInNew />}
+              >
+                View in store
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={() => router.push("/admin/products/new")}
+              >
+                New
+              </Button>
             </>
           ) : undefined
         }
       />
 
       {savedId && (
-        <div className="dc-card mb-6 flex flex-wrap items-center justify-between gap-3 p-4" style={{ borderColor: "var(--dc-edge)" }}>
-          <p className="text-sm font-bold">✅ Product published. Add another below, or:</p>
-          <div className="flex gap-2">
-            <a href={`/product/${savedId}`} target="_blank" rel="noopener noreferrer" className="btn">
-              <FiExternalLink /> View
-            </a>
-            <Link href={`/admin/products/${savedId}`} className="btn">
-              Edit it
-            </Link>
-          </div>
-        </div>
+        <Alert
+          severity="success"
+          variant="outlined"
+          sx={{ mb: 3, alignItems: "center", flexWrap: "wrap" }}
+          action={
+            <Stack direction="row" spacing={1}>
+              <Button
+                component="a"
+                href={`/product/${savedId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="small"
+                variant="outlined"
+                startIcon={<OpenInNew />}
+              >
+                View
+              </Button>
+              <Button
+                component={Link}
+                href={`/admin/products/${savedId}`}
+                size="small"
+                variant="outlined"
+              >
+                Edit it
+              </Button>
+            </Stack>
+          }
+        >
+          Product published. Add another below, or:
+        </Alert>
       )}
 
       {categories.length === 0 && (
-        <div className="dc-card mb-6 p-4 text-sm">
+        <Alert severity="warning" variant="outlined" sx={{ mb: 3 }}>
           You need a category first.{" "}
-          <Link href="/admin/categories" className="font-bold underline">
+          <MuiLink
+            component={Link}
+            href="/admin/categories"
+            sx={{ fontWeight: 700 }}
+          >
             Create one
-          </Link>
+          </MuiLink>
           .
-        </div>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="grid gap-6 pb-28 lg:grid-cols-[1fr_300px] lg:pb-0">
-        <div className="min-w-0 space-y-6">
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{
+          display: "grid",
+          gap: 3,
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 300px" },
+          pb: { xs: 14, lg: 0 },
+        }}
+      >
+        <Stack spacing={3} sx={{ minWidth: 0 }}>
           {/* IMAGES */}
-          <section className="dc-card p-4 sm:p-6" data-error={Boolean(errors.images)}>
-            <div className="mb-4 flex items-baseline justify-between gap-2">
-              <h2 className="font-display text-lg font-bold">Photos</h2>
-              <span className="text-xs text-muted">First photo is the cover · {images.length} added</span>
-            </div>
+          <Card
+            sx={{ p: { xs: 2, sm: 3 } }}
+            data-error={Boolean(errors.images)}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                mb: 2,
+                justifyContent: "space-between",
+                alignItems: "baseline",
+              }}
+            >
+              <Typography variant="h6">Photos</Typography>
+              <Typography variant="caption" color="text.secondary">
+                First photo is the cover · {images.length} added
+              </Typography>
+            </Stack>
 
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.5,
+                gridTemplateColumns: {
+                  xs: "repeat(3, 1fr)",
+                  sm: "repeat(4, 1fr)",
+                },
+              }}
+            >
               {images.map((image, index) => (
-                <div
+                <Box
                   key={image.publicId || image.url}
-                  className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-surface-2"
-                  style={index === 0 ? { outline: "2px solid var(--dc-edge)", outlineOffset: 2 } : undefined}
+                  sx={{
+                    position: "relative",
+                    aspectRatio: "3 / 4",
+                    overflow: "hidden",
+                    borderRadius: 2,
+                    bgcolor: "var(--dc-surface-2)",
+                    ...(index === 0 && {
+                      outline: "2px solid var(--dc-edge)",
+                      outlineOffset: 2,
+                    }),
+                  }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imageUrl(image, 300, "3:4")} alt="" className="h-full w-full object-contain" />
-                  {index === 0 && <span className="dc-badge dc-badge-live absolute left-1.5 top-1.5">Cover</span>}
-                  <button
-                    type="button"
+                  <Box
+                    component="img"
+                    src={imageUrl(image, 300, "3:4")}
+                    alt=""
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      display: "block",
+                    }}
+                  />
+                  {index === 0 && (
+                    <Chip
+                      label="Cover"
+                      size="small"
+                      color="primary"
+                      sx={{ position: "absolute", left: 6, top: 6 }}
+                    />
+                  )}
+                  <IconButton
+                    size="small"
                     onClick={() => removeImage(index)}
-                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-black/70 text-white"
                     aria-label={`Remove photo ${index + 1}`}
+                    sx={{ ...tileButton, right: 6, top: 6 }}
                   >
-                    <FiX />
-                  </button>
-                  <div className="absolute inset-x-1.5 bottom-1.5 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={() => moveImage(index, -1)}
-                      disabled={index === 0}
-                      className="flex h-7 w-7 items-center justify-center rounded-md bg-black/70 text-white disabled:invisible"
-                      aria-label="Move earlier"
-                    >
-                      <FiChevronLeft />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveImage(index, 1)}
-                      disabled={index === images.length - 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-md bg-black/70 text-white disabled:invisible"
-                      aria-label="Move later"
-                    >
-                      <FiChevronRight />
-                    </button>
-                  </div>
-                </div>
+                    <Close fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => moveImage(index, -1)}
+                    disabled={index === 0}
+                    aria-label="Move earlier"
+                    sx={{ ...tileButton, left: 6, bottom: 6 }}
+                  >
+                    <ChevronLeft fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => moveImage(index, 1)}
+                    disabled={index === images.length - 1}
+                    aria-label="Move later"
+                    sx={{ ...tileButton, right: 6, bottom: 6 }}
+                  >
+                    <ChevronRight fontSize="small" />
+                  </IconButton>
+                </Box>
               ))}
 
               {Array.from({ length: uploading }).map((_, i) => (
-                <div
+                <Skeleton
                   key={`uploading-${i}`}
-                  className="flex aspect-[3/4] animate-pulse items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-muted"
-                >
-                  Uploading…
-                </div>
+                  variant="rounded"
+                  sx={{ height: "auto", aspectRatio: "3 / 4", borderRadius: 2 }}
+                />
               ))}
 
-              <button
-                type="button"
-                onClick={() => fileInput.current?.click()}
-                className="flex aspect-[3/4] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-muted transition-colors hover:text-current"
-                style={{ borderColor: errors.images ? "var(--dc-danger)" : "var(--dc-line)" }}
+              <ButtonBase
+                component="label"
+                sx={{
+                  aspectRatio: "3 / 4",
+                  flexDirection: "column",
+                  gap: 0.5,
+                  borderRadius: 2,
+                  border: "2px dashed",
+                  borderColor: errors.images ? "error.main" : "var(--dc-line)",
+                  color: "text.secondary",
+                  "&:hover": {
+                    color: "text.primary",
+                    borderColor: "var(--dc-edge)",
+                  },
+                }}
               >
-                <FiImage className="text-2xl" />
-                <span className="text-xs font-bold">Add photos</span>
-              </button>
-            </div>
-            {errors.images ? (
-              <p className="dc-error">{errors.images}</p>
-            ) : (
-              <p className="dc-help">Select several at once. Images only, up to {MAX_IMAGE_MB}MB each. 3:4 portrait looks best.</p>
-            )}
+                <AddPhotoAlternateOutlined />
+                <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                  Add photos
+                </Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={handleFiles}
+                />
+              </ButtonBase>
+            </Box>
 
-            <input ref={fileInput} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
-          </section>
+            <FormHelperText error={Boolean(errors.images)} sx={{ mt: 1 }}>
+              {errors.images ||
+                `Select several at once. Images only, up to ${MAX_IMAGE_MB}MB each. 3:4 portrait looks best.`}
+            </FormHelperText>
+          </Card>
 
           {/* DETAILS */}
-          <section className="dc-card space-y-5 p-4 sm:p-6">
-            <h2 className="font-display text-lg font-bold">Details</h2>
+          <Card sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography variant="h6" sx={{ mb: 2.5 }}>
+              Details
+            </Typography>
 
-            <Field label="Product name" htmlFor="title" error={errors.title}>
-              <input
+            <Stack spacing={2.5}>
+              <TextField
                 id="title"
                 name="title"
+                label="Product name"
                 value={form.title}
                 onChange={onInput}
                 placeholder="e.g. Acid Wash Oversized Tee"
-                aria-invalid={Boolean(errors.title)}
-                className="dc-input"
+                error={Boolean(errors.title)}
+                helperText={errors.title}
+                fullWidth
               />
-            </Field>
 
-            <Field label="Description" htmlFor="description" optional help="Fabric, fit, GSM, wash care — buyers ask about these on WhatsApp.">
-              <textarea
+              <TextField
                 id="description"
                 name="description"
+                label="Description (optional)"
                 value={form.description}
                 onChange={onInput}
-                rows={5}
                 placeholder="240 GSM cotton, oversized drop-shoulder fit…"
-                className="dc-input resize-y"
+                helperText="Fabric, fit, GSM, wash care — buyers ask about these on WhatsApp."
+                multiline
+                minRows={5}
+                fullWidth
               />
-            </Field>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Category" htmlFor="category" error={errors.category}>
-                <select
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 2.5,
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                }}
+              >
+                <TextField
+                  select
                   id="category"
                   name="category"
+                  label="Category"
                   value={form.category}
                   onChange={onInput}
-                  aria-invalid={Boolean(errors.category)}
-                  className="dc-input"
+                  error={Boolean(errors.category)}
+                  helperText={errors.category}
+                  fullWidth
                 >
-                  <option value="" disabled>
+                  <MenuItem value="" disabled>
                     Choose…
-                  </option>
+                  </MenuItem>
                   {categories.map((category) => (
-                    <option key={category.slug} value={category.slug}>
+                    <MenuItem key={category.slug} value={category.slug}>
                       {category.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </Field>
+                </TextField>
 
-              <Field label="Style / subcategory" htmlFor="subcategory" optional>
-                <input
+                <TextField
                   id="subcategory"
                   name="subcategory"
+                  label="Style / subcategory (optional)"
                   value={form.subcategory}
                   onChange={onInput}
                   placeholder="e.g. Oversized"
-                  className="dc-input"
+                  fullWidth
                 />
-              </Field>
 
-              <Field label="Price" htmlFor="price" error={errors.price}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted">₹</span>
-                  <input
-                    id="price"
-                    name="price"
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    value={form.price}
-                    onChange={onInput}
-                    placeholder="999"
-                    aria-invalid={Boolean(errors.price)}
-                    className="dc-input pl-8"
-                  />
-                </div>
-              </Field>
+                <TextField
+                  id="price"
+                  name="price"
+                  label="Price"
+                  type="number"
+                  value={form.price}
+                  onChange={onInput}
+                  placeholder="999"
+                  error={Boolean(errors.price)}
+                  helperText={errors.price}
+                  slotProps={rupee}
+                  fullWidth
+                />
 
-              <Field
-                label="Compare-at price"
-                htmlFor="compareAtPrice"
-                optional
-                error={errors.compareAtPrice}
-                help="Shown crossed out to signal a discount."
-              >
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted">₹</span>
-                  <input
-                    id="compareAtPrice"
-                    name="compareAtPrice"
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    value={form.compareAtPrice}
-                    onChange={onInput}
-                    placeholder="1499"
-                    aria-invalid={Boolean(errors.compareAtPrice)}
-                    className="dc-input pl-8"
-                  />
-                </div>
-              </Field>
-            </div>
-          </section>
+                <TextField
+                  id="compareAtPrice"
+                  name="compareAtPrice"
+                  label="Compare-at price (optional)"
+                  type="number"
+                  value={form.compareAtPrice}
+                  onChange={onInput}
+                  placeholder="1499"
+                  error={Boolean(errors.compareAtPrice)}
+                  helperText={
+                    errors.compareAtPrice ||
+                    "Shown crossed out to signal a discount."
+                  }
+                  slotProps={rupee}
+                  fullWidth
+                />
+              </Box>
+            </Stack>
+          </Card>
 
           {/* SIZES & STOCK */}
-          <section className="dc-card p-4 sm:p-6" data-error={Boolean(errors.sizes)}>
-            <div className="mb-1 flex items-baseline justify-between gap-2">
-              <h2 className="font-display text-lg font-bold">Sizes &amp; stock</h2>
-              <span className="text-xs text-muted">{totalUnits} units total</span>
-            </div>
-            <p className="mb-4 text-xs text-muted">
-              0 = sold out for that size. {LOW_STOCK} or fewer shows as &quot;only a few left&quot; in the store.
-            </p>
+          <Card sx={{ p: { xs: 2, sm: 3 } }} data-error={Boolean(errors.sizes)}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ justifyContent: "space-between", alignItems: "baseline" }}
+            >
+              <Typography variant="h6">Sizes &amp; stock</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {totalUnits} units total
+              </Typography>
+            </Stack>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="p"
+              sx={{ mt: 0.5, mb: 2 }}
+            >
+              0 = sold out for that size. {LOW_STOCK} or fewer shows as
+              &quot;only a few left&quot; in the store.
+            </Typography>
 
-            <div className="mb-4 flex flex-wrap gap-2">
+            <Stack
+              direction="row"
+              useFlexGap
+              spacing={1}
+              sx={{ mb: 2, flexWrap: "wrap" }}
+            >
               {SIZE_PRESETS.map((preset) => (
-                <button key={preset.label} type="button" onClick={() => applyPreset(preset.sizes)} className="btn" style={{ minHeight: 34 }}>
+                <Button
+                  key={preset.label}
+                  variant="outlined"
+                  size="small"
+                  onClick={() => applyPreset(preset.sizes)}
+                >
                   {preset.label}
-                </button>
+                </Button>
               ))}
-            </div>
+            </Stack>
 
-            <div className="space-y-2">
+            <Stack spacing={1}>
               {sizes.map((size, index) => {
                 const stock = Number(size.stock) || 0;
                 return (
-                  <div key={index} className="flex items-center gap-2">
-                    <input
-                      aria-label={`Size ${index + 1} label`}
+                  <Stack
+                    key={index}
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center" }}
+                  >
+                    <TextField
+                      size="small"
                       value={size.label}
-                      onChange={(e) => updateSize(index, { label: e.target.value.toUpperCase() })}
+                      onChange={(e) =>
+                        updateSize(index, {
+                          label: e.target.value.toUpperCase(),
+                        })
+                      }
                       placeholder="M"
-                      className="dc-input w-20 text-center font-bold uppercase"
+                      sx={{ width: 80, flexShrink: 0 }}
+                      slotProps={{
+                        htmlInput: {
+                          "aria-label": `Size ${index + 1} label`,
+                          style: {
+                            textAlign: "center",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                          },
+                        },
+                      }}
                     />
-                    <div className="flex flex-1 items-center rounded-lg border-2 border-line">
-                      <button
-                        type="button"
-                        onClick={() => updateSize(index, { stock: Math.max(0, stock - 1) })}
-                        className="h-10 w-10 shrink-0 text-lg font-bold"
-                        aria-label={`Decrease ${size.label || "size"} stock`}
-                      >
-                        −
-                      </button>
-                      <input
-                        aria-label={`Stock for ${size.label || "size"}`}
-                        type="number"
-                        inputMode="numeric"
-                        min="0"
-                        value={size.stock}
-                        onChange={(e) => updateSize(index, { stock: Number(e.target.value) })}
-                        className="h-10 w-full min-w-0 bg-transparent text-center text-sm font-bold outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => updateSize(index, { stock: stock + 1 })}
-                        className="h-10 w-10 shrink-0 text-lg font-bold"
-                        aria-label={`Increase ${size.label || "size"} stock`}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <span
-                      className={`dc-badge hidden w-20 justify-center sm:inline-flex ${
-                        stock === 0 ? "dc-badge-ink" : stock <= LOW_STOCK ? "dc-badge-outline" : "dc-badge-live"
-                      }`}
-                    >
-                      {stock === 0 ? "Sold out" : stock <= LOW_STOCK ? "Low" : "In stock"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSizes((current) => current.filter((_, i) => i !== index))}
-                      className="btn btn-ghost px-2 text-muted"
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={size.stock}
+                      onChange={(e) =>
+                        updateSize(index, { stock: Number(e.target.value) })
+                      }
+                      sx={{ flex: 1, minWidth: 0 }}
+                      slotProps={{
+                        htmlInput: {
+                          min: 0,
+                          inputMode: "numeric",
+                          "aria-label": `Stock for ${size.label || "size"}`,
+                          style: { textAlign: "center", fontWeight: 700 },
+                        },
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <IconButton
+                                size="small"
+                                edge="start"
+                                onClick={() =>
+                                  updateSize(index, {
+                                    stock: Math.max(0, stock - 1),
+                                  })
+                                }
+                                aria-label={`Decrease ${size.label || "size"} stock`}
+                              >
+                                <Remove fontSize="small" />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                size="small"
+                                edge="end"
+                                onClick={() =>
+                                  updateSize(index, { stock: stock + 1 })
+                                }
+                                aria-label={`Increase ${size.label || "size"} stock`}
+                              >
+                                <Add fontSize="small" />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                    <Chip
+                      size="small"
+                      label={
+                        stock === 0
+                          ? "Sold out"
+                          : stock <= LOW_STOCK
+                            ? "Low"
+                            : "In stock"
+                      }
+                      color={
+                        stock === 0
+                          ? "secondary"
+                          : stock <= LOW_STOCK
+                            ? "default"
+                            : "primary"
+                      }
+                      variant={
+                        stock > 0 && stock <= LOW_STOCK ? "outlined" : "filled"
+                      }
+                      sx={{
+                        width: 80,
+                        display: { xs: "none", sm: "inline-flex" },
+                      }}
+                    />
+                    <IconButton
+                      onClick={() =>
+                        setSizes((current) =>
+                          current.filter((_, i) => i !== index),
+                        )
+                      }
                       aria-label={`Remove size ${size.label}`}
+                      sx={{ color: "text.secondary" }}
                     >
-                      <FiTrash2 />
-                    </button>
-                  </div>
+                      <DeleteOutlined />
+                    </IconButton>
+                  </Stack>
                 );
               })}
-            </div>
+            </Stack>
 
-            {errors.sizes && <p className="dc-error">{errors.sizes}</p>}
+            {errors.sizes && (
+              <FormHelperText error sx={{ mt: 1 }}>
+                {errors.sizes}
+              </FormHelperText>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setSizes((current) => [...current, { label: "", stock: 0 }])}
-              className="btn mt-3"
+            <Button
+              variant="outlined"
+              startIcon={<Add />}
+              onClick={() =>
+                setSizes((current) => [...current, { label: "", stock: 0 }])
+              }
+              sx={{ mt: 2 }}
             >
-              <FiPlus /> Add size
-            </button>
-          </section>
-        </div>
+              Add size
+            </Button>
+          </Card>
+        </Stack>
 
         {/* SIDEBAR */}
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-          <section className="dc-card space-y-4 p-4 sm:p-5">
-            <h2 className="font-display text-lg font-bold">Visibility</h2>
-            <Toggle
-              checked={form.active}
-              onChange={(value) => setField("active", value)}
-              label="Live in store"
-              description="Off saves it as a hidden draft."
-            />
-            <Toggle
-              checked={form.featured}
-              onChange={(value) => setField("featured", value)}
-              label="Featured drop"
-              description="Highlight in new drops."
-            />
-          </section>
-
-          {/* Desktop submit */}
-          <button type="submit" disabled={busy} className="btn-brutal btn-primary hidden w-full lg:flex">
-            {submitLabel}
-          </button>
-        </aside>
-
-        {/* Mobile sticky submit */}
-        <div
-          className="fixed inset-x-0 bottom-0 z-20 border-t-2 bg-surface px-4 pt-3 lg:hidden"
-          style={{
-            borderColor: "var(--dc-edge)",
-            paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+        <Stack
+          spacing={2}
+          sx={{
+            position: { lg: "sticky" },
+            top: { lg: 24 },
+            height: "fit-content",
           }}
         >
-          <button type="submit" disabled={busy} className="btn-brutal btn-primary w-full">
-            {submitLabel}
-          </button>
-        </div>
-      </form>
+          <Card sx={{ p: { xs: 2, sm: 2.5 } }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Visibility
+            </Typography>
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.active}
+                    onChange={(_, value) => setField("active", value)}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      Live in store
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Off saves it as a hidden draft.
+                    </Typography>
+                  </Box>
+                }
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.featured}
+                    onChange={(_, value) => setField("featured", value)}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      Featured drop
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Highlight in new drops.
+                    </Typography>
+                  </Box>
+                }
+              />
+            </Stack>
+          </Card>
+
+          {/* Desktop submit */}
+          <Box sx={{ display: { xs: "none", lg: "block" } }}>
+            {submitButton}
+          </Box>
+        </Stack>
+
+        {/* Mobile sticky submit */}
+        <Paper
+          square
+          elevation={0}
+          sx={{
+            display: { xs: "block", lg: "none" },
+            position: "fixed",
+            insetInline: 0,
+            bottom: 0,
+            zIndex: 20,
+            borderTop: "2px solid var(--dc-edge)",
+            px: 2,
+            pt: 1.5,
+            pb: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          {submitButton}
+        </Paper>
+      </Box>
     </>
   );
 }
-

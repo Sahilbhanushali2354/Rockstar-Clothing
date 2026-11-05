@@ -1,22 +1,30 @@
 "use client";
-import React from "react";
-import { BiSearch } from "react-icons/bi";
+
+import { IconButton, InputBase, Paper } from "@mui/material";
+import { Search } from "@mui/icons-material";
 
 const SearchBar = () => {
   return (
-    <div>
-      <div className="flex item-center bg-gray-100 p-2 rounded-full max-md:hidden">
-        <button>
-          <BiSearch size={20} className="opacity-50" />
-        </button>
-        <input
-          type="text"
-          className="outline-none bg-transparent ml-2 caret-blue-500 placeholder:font-light placeholder:text-gray-600 text-[15px]"
-          placeholder="Search"
-          autoComplete="false"
-        />
-      </div>
-    </div>
+    <Paper
+      elevation={0}
+      sx={{
+        display: { xs: "none", md: "flex" },
+        alignItems: "center",
+        p: 0.5,
+        pl: 1,
+        borderRadius: 999,
+        bgcolor: "var(--dc-surface-2)",
+      }}
+    >
+      <IconButton size="small" aria-label="Search" sx={{ opacity: 0.5 }}>
+        <Search fontSize="small" />
+      </IconButton>
+      <InputBase
+        placeholder="Search"
+        autoComplete="off"
+        sx={{ ml: 1, fontSize: 15 }}
+      />
+    </Paper>
   );
 };
 

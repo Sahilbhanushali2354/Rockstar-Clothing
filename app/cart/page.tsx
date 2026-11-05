@@ -1,21 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { FiMinus, FiPlus, FiTrash2 } from "react-icons/fi";
+import {
+  Box,
+  Button,
+  Card,
+  Chip,
+  Divider,
+  IconButton,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { Add, DeleteOutlined, Remove } from "@mui/icons-material";
 
 import StoreShell from "../components/store/StoreShell";
 import SectionHeader from "../components/store/SectionHeader";
 import { inr } from "../components/store/Price";
 import WhatsAppButton from "../components/WhatsAppButton";
 import StickyWhatsAppBar from "../components/StickyWhatsAppBar";
-import { decreaseQuantity, increaseQuantity, removeFromCart } from "../lib/features/cart/cartSlice";
+import {
+  decreaseQuantity,
+  increaseQuantity,
+  removeFromCart,
+} from "../lib/features/cart/cartSlice";
 import { useAppDispatch, useAppSelector } from "../lib/hooks";
+
+const DISPLAY_FONT = "var(--font-display), var(--font-body), sans-serif";
+const badge = {
+  height: 22,
+  borderRadius: 1,
+  border: "1.5px solid var(--dc-edge)",
+  bgcolor: "var(--dc-surface)",
+} as const;
 
 export default function CartPage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items);
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
   const contentIds = items.map((item) => String(item.id));
 
@@ -23,138 +50,340 @@ export default function CartPage() {
     <StoreShell stickyCta={items.length > 0} className="py-10 sm:py-14">
       <SectionHeader
         as="h1"
-        eyebrow={count > 0 ? `${count} ${count === 1 ? "item" : "items"}` : "Cart"}
+        eyebrow={
+          count > 0 ? `${count} ${count === 1 ? "item" : "items"}` : "Cart"
+        }
         title="Your"
         highlight="bag"
       />
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-line px-6 py-20 text-center">
-          <p className="font-display text-4xl font-bold">
-            It&apos;s <span className="dc-highlight">empty.</span>
-          </p>
-          <p className="max-w-sm text-muted">Your next fit is one tap away.</p>
-          <Link href="/shop" className="btn-brutal btn-primary">
+        <Stack
+          spacing={2}
+          sx={{
+            alignItems: "center",
+            borderRadius: 4,
+            border: "2px dashed var(--dc-line)",
+            px: 3,
+            py: 10,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h2" component="p" sx={{ fontSize: 36 }}>
+            It&apos;s{" "}
+            <Box component="span" className="dc-highlight">
+              empty.
+            </Box>
+          </Typography>
+          <Typography color="text.secondary" sx={{ maxWidth: 384 }}>
+            Your next fit is one tap away.
+          </Typography>
+          <Button
+            component={Link}
+            href="/shop"
+            variant="contained"
+            size="large"
+          >
             Shop the drop →
-          </Link>
-        </div>
+          </Button>
+        </Stack>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px] lg:gap-10">
+        <Box
+          sx={{
+            display: "grid",
+            alignItems: "start",
+            gap: { xs: 3, lg: 5 },
+            gridTemplateColumns: { xs: "1fr", lg: "1fr 380px" },
+          }}
+        >
           {/* Items */}
-          <ul className="space-y-3">
+          <Stack
+            component="ul"
+            spacing={1.5}
+            sx={{ m: 0, p: 0, listStyle: "none" }}
+          >
             {items.map((item) => {
               const key = { id: item.id, size: item.size, color: item.color };
+              const href = `/product/${encodeURIComponent(String(item.id))}`;
 
               return (
-                <li
+                <Card
+                  component="li"
                   key={`${item.id}-${item.size ?? ""}-${item.color ?? ""}`}
-                  className="flex gap-3 rounded-xl border-2 border-edge bg-surface p-3 sm:gap-5 sm:p-4"
+                  sx={{
+                    display: "flex",
+                    gap: { xs: 1.5, sm: 2.5 },
+                    borderRadius: 3,
+                    border: "2px solid var(--dc-edge)",
+                    p: { xs: 1.5, sm: 2 },
+                  }}
                 >
-                  <Link
-                    href={`/product/${encodeURIComponent(String(item.id))}`}
-                    className="aspect-[3/4] w-24 shrink-0 overflow-hidden rounded-lg border-2 border-edge bg-surface-2 sm:w-28"
+                  <Box
+                    component={Link}
+                    href={href}
+                    sx={{
+                      aspectRatio: "3 / 4",
+                      width: { xs: 96, sm: 112 },
+                      flexShrink: 0,
+                      overflow: "hidden",
+                      borderRadius: 2,
+                      border: "2px solid var(--dc-edge)",
+                      bgcolor: "var(--dc-surface-2)",
+                    }}
                   >
                     {item.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image} alt={item.name} className="h-full w-full object-contain" />
+                      <Box
+                        component="img"
+                        src={item.image}
+                        alt={item.name}
+                        sx={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
                     )}
-                  </Link>
+                  </Box>
 
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        href={`/product/${encodeURIComponent(String(item.id))}`}
-                        className="line-clamp-2 font-bold leading-snug hover:underline sm:text-lg"
+                  <Stack sx={{ minWidth: 0, flex: 1 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <MuiLink
+                        component={Link}
+                        href={href}
+                        color="inherit"
+                        underline="hover"
+                        sx={{
+                          fontWeight: 700,
+                          lineHeight: 1.375,
+                          fontSize: { sm: 18 },
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
                       >
                         {item.name}
-                      </Link>
-                      <button
-                        type="button"
+                      </MuiLink>
+                      <IconButton
+                        size="small"
                         onClick={() => dispatch(removeFromCart(key))}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-danger"
                         aria-label={`Remove ${item.name}`}
+                        sx={{
+                          color: "text.secondary",
+                          "&:hover": { color: "error.main" },
+                        }}
                       >
-                        <FiTrash2 />
-                      </button>
-                    </div>
+                        <DeleteOutlined fontSize="small" />
+                      </IconButton>
+                    </Stack>
 
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {item.size && <span className="dc-badge">Size {item.size}</span>}
-                      {item.color && <span className="dc-badge">{item.color}</span>}
-                    </div>
+                    <Stack
+                      direction="row"
+                      useFlexGap
+                      spacing={0.75}
+                      sx={{ mt: 0.5, flexWrap: "wrap" }}
+                    >
+                      {item.size && (
+                        <Chip
+                          size="small"
+                          label={`Size ${item.size}`}
+                          sx={badge}
+                        />
+                      )}
+                      {item.color && (
+                        <Chip size="small" label={item.color} sx={badge} />
+                      )}
+                    </Stack>
 
-                    <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                      <div className="flex items-center rounded-lg border-2 border-edge">
-                        <button
-                          type="button"
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        mt: "auto",
+                        pt: 1.5,
+                        alignItems: "flex-end",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        sx={{
+                          alignItems: "center",
+                          borderRadius: 2,
+                          border: "2px solid var(--dc-edge)",
+                        }}
+                      >
+                        <IconButton
+                          size="small"
                           onClick={() => dispatch(decreaseQuantity(key))}
-                          className="flex h-9 w-9 items-center justify-center"
-                          aria-label={item.quantity === 1 ? `Remove ${item.name}` : "Decrease quantity"}
+                          aria-label={
+                            item.quantity === 1
+                              ? `Remove ${item.name}`
+                              : "Decrease quantity"
+                          }
+                          sx={{ width: 36, height: 36 }}
                         >
-                          <FiMinus />
-                        </button>
-                        <span className="w-7 text-center font-display font-bold">{item.quantity}</span>
-                        <button
-                          type="button"
+                          <Remove fontSize="small" />
+                        </IconButton>
+                        <Typography
+                          sx={{
+                            width: 28,
+                            textAlign: "center",
+                            fontFamily: DISPLAY_FONT,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.quantity}
+                        </Typography>
+                        <IconButton
+                          size="small"
                           onClick={() => dispatch(increaseQuantity(key))}
-                          className="flex h-9 w-9 items-center justify-center"
                           aria-label="Increase quantity"
+                          sx={{ width: 36, height: 36 }}
                         >
-                          <FiPlus />
-                        </button>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-display text-lg font-bold">{inr(item.price * item.quantity)}</p>
-                        {item.quantity > 1 && <p className="text-xs text-muted">{inr(item.price)} each</p>}
-                      </div>
-                    </div>
-                  </div>
-                </li>
+                          <Add fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                      <Box sx={{ textAlign: "right" }}>
+                        <Typography
+                          sx={{
+                            fontFamily: DISPLAY_FONT,
+                            fontSize: 18,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {inr(item.price * item.quantity)}
+                        </Typography>
+                        {item.quantity > 1 && (
+                          <Typography variant="caption" color="text.secondary">
+                            {inr(item.price)} each
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  </Stack>
+                </Card>
               );
             })}
-          </ul>
+          </Stack>
 
           {/* Summary */}
-          <aside className="rounded-2xl border-2 border-edge bg-surface p-5 shadow-brutal-lg sm:p-6 lg:sticky lg:top-24">
-            <h2 className="font-display text-2xl font-bold">Summary</h2>
-            <dl className="mt-5 space-y-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted">Subtotal ({count})</dt>
-                <dd className="font-bold">{inr(total)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted">Shipping</dt>
-                <dd className="font-bold">Confirmed on WhatsApp</dd>
-              </div>
-            </dl>
-            <div className="my-5 border-t-2 border-dashed border-line" />
-            <div className="flex items-baseline justify-between">
-              <span className="font-extrabold uppercase tracking-wide">Total</span>
-              <span className="font-display text-3xl font-bold">{inr(total)}</span>
-            </div>
-
-            <WhatsAppButton
-              items={items}
-              source="cart_summary"
-              contentIds={contentIds}
-              label="Order via WhatsApp"
-              className="mt-6 w-full"
+          <Paper
+            component="aside"
+            elevation={0}
+            sx={{
+              borderRadius: 4,
+              border: "2px solid var(--dc-edge)",
+              p: { xs: 2.5, sm: 3 },
+              boxShadow: "6px 6px 0 var(--dc-edge)",
+              position: { lg: "sticky" },
+              top: { lg: 96 },
+            }}
+          >
+            <Typography variant="h5" component="h2" sx={{ fontSize: 24 }}>
+              Summary
+            </Typography>
+            <Stack
+              component="dl"
+              spacing={1.5}
+              sx={{ mt: 2.5, mb: 0, fontSize: 14 }}
+            >
+              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+                <Box component="dt" sx={{ color: "text.secondary" }}>
+                  Subtotal ({count})
+                </Box>
+                <Box component="dd" sx={{ m: 0, fontWeight: 700 }}>
+                  {inr(total)}
+                </Box>
+              </Stack>
+              <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+                <Box component="dt" sx={{ color: "text.secondary" }}>
+                  Shipping
+                </Box>
+                <Box component="dd" sx={{ m: 0, fontWeight: 700 }}>
+                  Confirmed on WhatsApp
+                </Box>
+              </Stack>
+            </Stack>
+            <Divider
+              sx={{ my: 2.5, borderBottomWidth: 2, borderStyle: "dashed" }}
             />
+            <Stack
+              direction="row"
+              sx={{ alignItems: "baseline", justifyContent: "space-between" }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.025em",
+                }}
+              >
+                Total
+              </Typography>
+              <Typography
+                sx={{ fontFamily: DISPLAY_FONT, fontSize: 30, fontWeight: 700 }}
+              >
+                {inr(total)}
+              </Typography>
+            </Stack>
 
-            <ol className="mt-6 space-y-2 text-sm">
-              {["Tap the button — your order is pre-typed", "We confirm size & stock on chat", "Pay via UPI, we ship"].map(
-                (step, index) => (
-                  <li key={step} className="flex gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 border-ink bg-acid text-xs font-black text-ink">
-                      {index + 1}
-                    </span>
-                    <span className="text-muted">{step}</span>
-                  </li>
-                ),
-              )}
-            </ol>
-          </aside>
-        </div>
+            <Box sx={{ mt: 3 }}>
+              <WhatsAppButton
+                items={items}
+                source="cart_summary"
+                contentIds={contentIds}
+                label="Order via WhatsApp"
+                className="w-full"
+              />
+            </Box>
+
+            <Stack
+              component="ol"
+              spacing={1}
+              sx={{ mt: 3, mb: 0, p: 0, listStyle: "none", fontSize: 14 }}
+            >
+              {[
+                "Tap the button — your order is pre-typed",
+                "We confirm size & stock on chat",
+                "Pay via UPI, we ship",
+              ].map((step, index) => (
+                <Stack component="li" direction="row" spacing={1.5} key={step}>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "flex",
+                      width: 24,
+                      height: 24,
+                      flexShrink: 0,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 1.5,
+                      border: "2px solid var(--dc-ink)",
+                      bgcolor: "var(--dc-acid)",
+                      color: "var(--dc-ink)",
+                      fontSize: 12,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {index + 1}
+                  </Box>
+                  <Box component="span" sx={{ color: "text.secondary" }}>
+                    {step}
+                  </Box>
+                </Stack>
+              ))}
+            </Stack>
+          </Paper>
+        </Box>
       )}
 
       {items.length > 0 && (

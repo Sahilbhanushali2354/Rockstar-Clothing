@@ -3,10 +3,22 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { FiExternalLink, FiRotateCcw } from "react-icons/fi";
+import {
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  InputAdornment,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { OpenInNew, RestartAlt } from "@mui/icons-material";
 
 import { FStore } from "@/firebase/firebase.config";
-import { Field, PageHeader, Skeleton } from "@/app/components/ui";
+import { PageHeader, Skeleton } from "@/app/components/ui";
 import Marquee from "@/app/components/store/Marquee";
 import { revalidateStore } from "@/app/lib/adminApi";
 import {
@@ -79,12 +91,33 @@ export default function StoreSettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <Stack spacing={2}>
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-80" />
-      </div>
+      </Stack>
     );
   }
+
+  const card = { p: { xs: 2, sm: 3 } } as const;
+  const mono = {
+    "& textarea": {
+      fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+      fontSize: 12,
+    },
+  } as const;
+
+  const submitButton = (
+    <Button
+      type="submit"
+      variant="contained"
+      size="large"
+      fullWidth
+      disabled={saving}
+      startIcon={saving ? <CircularProgress size={18} /> : undefined}
+    >
+      {saving ? "Saving…" : "Save & publish"}
+    </Button>
+  );
 
   return (
     <>
@@ -93,119 +126,275 @@ export default function StoreSettingsPage() {
         title="Store settings"
         description="Text shown across the store. Changes go live as soon as you save."
         actions={
-          <a href="/" target="_blank" rel="noopener noreferrer" className="btn">
-            <FiExternalLink /> View store
-          </a>
+          <Button
+            component="a"
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outlined"
+            startIcon={<OpenInNew />}
+          >
+            View store
+          </Button>
         }
       />
 
-      <form onSubmit={handleSave} className="grid gap-6 pb-28 lg:grid-cols-[1fr_360px] lg:pb-0">
-        <div className="min-w-0 space-y-6">
+      <Box
+        component="form"
+        onSubmit={handleSave}
+        sx={{
+          display: "grid",
+          gap: 3,
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 360px" },
+          pb: { xs: 14, lg: 0 },
+        }}
+      >
+        <Stack spacing={3} sx={{ minWidth: 0 }}>
           {/* Hero */}
-          <section className="dc-card space-y-4 p-4 sm:p-6">
-            <h2 className="font-display text-lg font-bold">Home hero</h2>
-            <Field label="Badge" htmlFor="heroBadge" help="Small pill above the headline.">
-              <input id="heroBadge" value={form.heroBadge} onChange={(e) => set("heroBadge", e.target.value)} className="dc-input" />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
-              <Field label="Headline" htmlFor="heroTitle">
-                <input id="heroTitle" value={form.heroTitle} onChange={(e) => set("heroTitle", e.target.value)} className="dc-input" />
-              </Field>
-              <Field label="Highlighted word" htmlFor="heroHighlight" help="In the acid block.">
-                <input id="heroHighlight" value={form.heroHighlight} onChange={(e) => set("heroHighlight", e.target.value)} className="dc-input" />
-              </Field>
-            </div>
-            <Field label="Subtitle" htmlFor="heroSubtitle">
-              <textarea id="heroSubtitle" rows={3} value={form.heroSubtitle} onChange={(e) => set("heroSubtitle", e.target.value)} className="dc-input resize-y" />
-            </Field>
-          </section>
+          <Card component="section" sx={card}>
+            <Stack spacing={2.5}>
+              <Typography variant="h6" component="h2">
+                Home hero
+              </Typography>
+              <TextField
+                id="heroBadge"
+                label="Badge"
+                value={form.heroBadge}
+                onChange={(e) => set("heroBadge", e.target.value)}
+                helperText="Small pill above the headline."
+                fullWidth
+              />
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 2.5,
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 200px" },
+                }}
+              >
+                <TextField
+                  id="heroTitle"
+                  label="Headline"
+                  value={form.heroTitle}
+                  onChange={(e) => set("heroTitle", e.target.value)}
+                  fullWidth
+                />
+                <TextField
+                  id="heroHighlight"
+                  label="Highlighted word"
+                  value={form.heroHighlight}
+                  onChange={(e) => set("heroHighlight", e.target.value)}
+                  helperText="In the acid block."
+                  fullWidth
+                />
+              </Box>
+              <TextField
+                id="heroSubtitle"
+                label="Subtitle"
+                value={form.heroSubtitle}
+                onChange={(e) => set("heroSubtitle", e.target.value)}
+                multiline
+                minRows={3}
+                fullWidth
+              />
+            </Stack>
+          </Card>
 
           {/* Strips */}
-          <section className="dc-card space-y-4 p-4 sm:p-6">
-            <h2 className="font-display text-lg font-bold">Scrolling strips</h2>
-            <Field label="Top announcement bar" htmlFor="announcements" help="One message per line. Shown above the navbar on every page.">
-              <textarea id="announcements" rows={4} value={form.announcements} onChange={(e) => set("announcements", e.target.value)} className="dc-input resize-y font-mono text-xs" />
-            </Field>
-            <Field label="Home page ticker" htmlFor="tickerItems" help="One message per line. The acid strip between home sections.">
-              <textarea id="tickerItems" rows={4} value={form.tickerItems} onChange={(e) => set("tickerItems", e.target.value)} className="dc-input resize-y font-mono text-xs" />
-            </Field>
-          </section>
+          <Card component="section" sx={card}>
+            <Stack spacing={2.5}>
+              <Typography variant="h6" component="h2">
+                Scrolling strips
+              </Typography>
+              <TextField
+                id="announcements"
+                label="Top announcement bar"
+                value={form.announcements}
+                onChange={(e) => set("announcements", e.target.value)}
+                helperText="One message per line. Shown above the navbar on every page."
+                multiline
+                minRows={4}
+                fullWidth
+                sx={mono}
+              />
+              <TextField
+                id="tickerItems"
+                label="Home page ticker"
+                value={form.tickerItems}
+                onChange={(e) => set("tickerItems", e.target.value)}
+                helperText="One message per line. The acid strip between home sections."
+                multiline
+                minRows={4}
+                fullWidth
+                sx={mono}
+              />
+            </Stack>
+          </Card>
 
           {/* Brand */}
-          <section className="dc-card space-y-4 p-4 sm:p-6">
-            <h2 className="font-display text-lg font-bold">Brand</h2>
-            <Field
-              label="Instagram handle"
-              htmlFor="instagramHandle"
-              help={
-                <>
-                  Links to{" "}
-                  <a href={instagramUrl(preview.instagramHandle)} target="_blank" rel="noopener noreferrer" className="underline">
-                    {instagramUrl(preview.instagramHandle)}
-                  </a>
-                </>
-              }
-            >
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted">@</span>
-                <input
-                  id="instagramHandle"
-                  value={form.instagramHandle}
-                  onChange={(e) => set("instagramHandle", e.target.value.replace(/^@/, "").replace(/\s/g, ""))}
-                  className="dc-input pl-8"
-                />
-              </div>
-            </Field>
-            <Field label="Facebook page URL" htmlFor="facebookUrl" help="Full link starting with https://. Shown in the footer.">
-              <input
+          <Card component="section" sx={card}>
+            <Stack spacing={2.5}>
+              <Typography variant="h6" component="h2">
+                Brand
+              </Typography>
+              <TextField
+                id="instagramHandle"
+                label="Instagram handle"
+                value={form.instagramHandle}
+                onChange={(e) =>
+                  set(
+                    "instagramHandle",
+                    e.target.value.replace(/^@/, "").replace(/\s/g, ""),
+                  )
+                }
+                helperText={
+                  <>
+                    Links to{" "}
+                    <MuiLink
+                      href={instagramUrl(preview.instagramHandle)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="inherit"
+                    >
+                      {instagramUrl(preview.instagramHandle)}
+                    </MuiLink>
+                  </>
+                }
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">@</InputAdornment>
+                    ),
+                  },
+                }}
+                fullWidth
+              />
+              <TextField
                 id="facebookUrl"
+                label="Facebook page URL"
                 type="url"
                 value={form.facebookUrl}
                 onChange={(e) => set("facebookUrl", e.target.value.trim())}
-                className="dc-input"
+                helperText="Full link starting with https://. Shown in the footer."
+                fullWidth
               />
-            </Field>
-            <Field label="Tagline" htmlFor="tagline" help="Footer text and the default description for search/share previews.">
-              <textarea id="tagline" rows={2} value={form.tagline} onChange={(e) => set("tagline", e.target.value)} className="dc-input resize-y" />
-            </Field>
-          </section>
+              <TextField
+                id="tagline"
+                label="Tagline"
+                value={form.tagline}
+                onChange={(e) => set("tagline", e.target.value)}
+                helperText="Footer text and the default description for search/share previews."
+                multiline
+                minRows={2}
+                fullWidth
+              />
+            </Stack>
+          </Card>
 
-          <button type="button" onClick={() => setForm(toForm(DEFAULT_SETTINGS))} className="btn">
-            <FiRotateCcw /> Reset to defaults
-          </button>
-        </div>
+          <Box>
+            <Button
+              variant="outlined"
+              startIcon={<RestartAlt />}
+              onClick={() => setForm(toForm(DEFAULT_SETTINGS))}
+            >
+              Reset to defaults
+            </Button>
+          </Box>
+        </Stack>
 
         {/* Live preview */}
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-muted">Live preview</p>
-          <div className="overflow-hidden rounded-xl border-2 border-edge">
-            <Marquee items={preview.announcements} tone="inverse" className="border-y-0" />
-            <div className="dc-inverse p-5">
-              <span className="inline-block rounded-full border-2 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ borderColor: "var(--dc-inverse-text)" }}>
-                {preview.heroBadge}
-              </span>
-              <p className="mt-3 font-display text-4xl font-bold leading-[0.95] tracking-tight">
-                {preview.heroTitle} <span className="dc-highlight -rotate-2">{preview.heroHighlight}</span>
-              </p>
-              <p className="mt-3 text-xs opacity-80">{preview.heroSubtitle}</p>
-            </div>
-            <Marquee items={preview.tickerItems} tone="accent" className="border-b-0" />
-          </div>
-
-          <button type="submit" disabled={saving} className="btn-brutal btn-primary hidden w-full lg:flex">
-            {saving ? "Saving…" : "Save & publish"}
-          </button>
-        </aside>
-
-        <div
-          className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-edge bg-surface px-4 pt-3 lg:hidden"
-          style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+        <Stack
+          component="aside"
+          spacing={2}
+          sx={{
+            position: { lg: "sticky" },
+            top: { lg: 24 },
+            height: "fit-content",
+          }}
         >
-          <button type="submit" disabled={saving} className="btn-brutal btn-primary w-full">
-            {saving ? "Saving…" : "Save & publish"}
-          </button>
-        </div>
-      </form>
+          <Typography
+            color="text.secondary"
+            sx={{
+              fontSize: 12,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.18em",
+            }}
+          >
+            Live preview
+          </Typography>
+          <Box
+            sx={{
+              overflow: "hidden",
+              borderRadius: 3,
+              border: "2px solid var(--dc-edge)",
+            }}
+          >
+            <Marquee
+              items={preview.announcements}
+              tone="inverse"
+              border="none"
+            />
+            <Box className="dc-inverse" sx={{ p: 2.5 }}>
+              <Box
+                component="span"
+                sx={{
+                  display: "inline-block",
+                  borderRadius: 999,
+                  border: "2px solid var(--dc-inverse-text)",
+                  px: 1.25,
+                  py: 0.25,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                }}
+              >
+                {preview.heroBadge}
+              </Box>
+              <Typography
+                variant="h2"
+                component="p"
+                sx={{ mt: 1.5, fontSize: 36, lineHeight: 0.95 }}
+              >
+                {preview.heroTitle}{" "}
+                <Box
+                  component="span"
+                  className="dc-highlight"
+                  sx={{ transform: "rotate(-2deg)" }}
+                >
+                  {preview.heroHighlight}
+                </Box>
+              </Typography>
+              <Typography sx={{ mt: 1.5, fontSize: 12, opacity: 0.8 }}>
+                {preview.heroSubtitle}
+              </Typography>
+            </Box>
+            <Marquee items={preview.tickerItems} tone="accent" border="top" />
+          </Box>
+
+          <Box sx={{ display: { xs: "none", lg: "block" } }}>
+            {submitButton}
+          </Box>
+        </Stack>
+
+        <Paper
+          square
+          elevation={0}
+          sx={{
+            display: { xs: "block", lg: "none" },
+            position: "fixed",
+            insetInline: 0,
+            bottom: 0,
+            zIndex: 20,
+            borderTop: "2px solid var(--dc-edge)",
+            px: 2,
+            pt: 1.5,
+            pb: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          {submitButton}
+        </Paper>
+      </Box>
     </>
   );
 }

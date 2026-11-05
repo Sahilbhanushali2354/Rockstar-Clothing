@@ -10,15 +10,27 @@ import {
   type User,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 import { auth, FStore } from "@/firebase/firebase.config";
-import { Field } from "@/app/components/ui";
 import PasswordInput from "@/app/components/PasswordInput";
 import Loader from "@/app/components/Loader";
 import { authErrorMessage, isValidEmail, safeRedirect } from "../authErrors";
 
 async function destinationFor(user: User, redirect: string | null) {
-  const snapshot = await getDoc(doc(FStore, "users", user.uid)).catch(() => null);
+  const snapshot = await getDoc(doc(FStore, "users", user.uid)).catch(
+    () => null,
+  );
   const isAdmin = snapshot?.data()?.role === "admin";
   return safeRedirect(redirect, isAdmin ? "/admin" : "/");
 }
@@ -31,7 +43,11 @@ function LoginForm() {
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    form?: string;
+  }>({});
   const [submitting, setSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
@@ -59,7 +75,11 @@ function LoginForm() {
 
     setSubmitting(true);
     try {
-      const { user } = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const { user } = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password,
+      );
       router.replace(await destinationFor(user, redirect));
     } catch (error) {
       setErrors({ form: authErrorMessage(error) });
@@ -69,7 +89,9 @@ function LoginForm() {
 
   const handleReset = async () => {
     if (!isValidEmail(email)) {
-      setErrors({ email: "Enter your email above, then tap “Forgot password” again." });
+      setErrors({
+        email: "Enter your email above, then tap “Forgot password” again.",
+      });
       return;
     }
     try {
@@ -84,78 +106,138 @@ function LoginForm() {
   if (checking) return <Loader label="Loading" />;
 
   return (
-    <div className="dc-card-brutal p-6 sm:p-8">
-      <h1 className="font-display text-3xl font-bold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-muted">Log in to your DOPAMINE CLUB account.</p>
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 3, sm: 4 },
+        borderRadius: 3,
+        border: "2px solid var(--dc-edge)",
+        boxShadow: "6px 6px 0 var(--dc-edge)",
+      }}
+    >
+      <Typography variant="h4" component="h1" sx={{ fontSize: 30 }}>
+        Welcome back
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        Log in to your DOPAMINE CLUB account.
+      </Typography>
 
       {errors.form && (
-        <p role="alert" className="mt-5 rounded-lg p-3 text-sm font-semibold text-white" style={{ background: "var(--dc-danger)" }}>
+        <Alert severity="error" variant="filled" sx={{ mt: 2.5 }}>
           {errors.form}
-        </p>
+        </Alert>
       )}
       {resetSent && (
-        <p role="status" className="mt-5 rounded-lg p-3 text-sm font-semibold" style={{ background: "var(--dc-acid)", color: "var(--dc-ink)" }}>
+        <Alert
+          severity="success"
+          variant="filled"
+          sx={{ mt: 2.5, bgcolor: "var(--dc-acid)", color: "var(--dc-ink)" }}
+        >
           Reset link sent to {email}. Check your inbox (and spam).
-        </p>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Email" htmlFor="email" error={errors.email}>
-          <input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              setErrors((current) => ({ ...current, email: undefined, form: undefined }));
-            }}
-            placeholder="you@example.com"
-            aria-invalid={Boolean(errors.email)}
-            className="dc-input"
-          />
-        </Field>
+      <Stack
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        spacing={2.5}
+        sx={{ mt: 3 }}
+      >
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setErrors((current) => ({
+              ...current,
+              email: undefined,
+              form: undefined,
+            }));
+          }}
+          placeholder="you@example.com"
+          error={Boolean(errors.email)}
+          helperText={errors.email}
+          slotProps={{ htmlInput: { inputMode: "email" } }}
+          fullWidth
+        />
 
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className="dc-label mb-0">
-              Password
-            </label>
-            <button type="button" onClick={handleReset} className="text-xs font-bold text-muted hover:underline">
-              Forgot password?
-            </button>
-          </div>
+        <Box>
           <PasswordInput
             id="password"
+            label="Password"
             autoComplete="current-password"
             value={password}
             onChange={(event) => {
               setPassword(event.target.value);
-              setErrors((current) => ({ ...current, password: undefined, form: undefined }));
+              setErrors((current) => ({
+                ...current,
+                password: undefined,
+                form: undefined,
+              }));
             }}
             placeholder="••••••••"
-            aria-invalid={Boolean(errors.password)}
+            error={Boolean(errors.password)}
+            helperText={errors.password}
           />
-          {errors.password && <p className="dc-error">{errors.password}</p>}
-        </div>
+          <Box sx={{ mt: 0.75, textAlign: "right" }}>
+            <Button
+              variant="text"
+              size="small"
+              onClick={handleReset}
+              sx={{
+                minHeight: 0,
+                p: 0,
+                fontSize: 12,
+                textTransform: "none",
+                letterSpacing: 0,
+                color: "text.secondary",
+                "&:hover": {
+                  bgcolor: "transparent",
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              Forgot password?
+            </Button>
+          </Box>
+        </Box>
 
-        <button type="submit" disabled={submitting} className="btn-brutal btn-primary w-full">
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={18} /> : undefined}
+        >
           {submitting ? "Logging in…" : "Log in"}
-        </button>
-      </form>
+        </Button>
+      </Stack>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 3, textAlign: "center" }}
+      >
         New here?{" "}
-        <Link
-          href={redirect ? `/auth/signup?redirect=${encodeURIComponent(redirect)}` : "/auth/signup"}
-          className="font-bold underline"
-          style={{ color: "var(--dc-text)" }}
+        <MuiLink
+          component={Link}
+          href={
+            redirect
+              ? `/auth/signup?redirect=${encodeURIComponent(redirect)}`
+              : "/auth/signup"
+          }
+          color="text.primary"
+          sx={{ fontWeight: 700 }}
         >
           Create an account
-        </Link>
-      </p>
-    </div>
+        </MuiLink>
+      </Typography>
+    </Paper>
   );
 }
 

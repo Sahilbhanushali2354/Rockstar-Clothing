@@ -5,9 +5,19 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  InputAdornment,
+  Link as MuiLink,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 import { auth, FStore } from "@/firebase/firebase.config";
-import { Field } from "@/app/components/ui";
 import PasswordInput from "@/app/components/PasswordInput";
 import Loader from "@/app/components/Loader";
 import { authErrorMessage, isValidEmail, safeRedirect } from "../authErrors";
@@ -19,25 +29,39 @@ function SignupForm() {
   const router = useRouter();
   const redirect = useSearchParams().get("redirect");
 
-  const [values, setValues] = useState<Values>({ name: "", email: "", phone: "", password: "" });
+  const [values, setValues] = useState<Values>({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+  });
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = event.target;
     setValues((current) => ({
       ...current,
       [name]: name === "phone" ? value.replace(/\D/g, "").slice(0, 10) : value,
     }));
-    setErrors((current) => ({ ...current, [name]: undefined, form: undefined }));
+    setErrors((current) => ({
+      ...current,
+      [name]: undefined,
+      form: undefined,
+    }));
   };
 
   const validate = () => {
     const next: Errors = {};
     if (!values.name.trim()) next.name = "Tell us your name.";
-    if (!isValidEmail(values.email)) next.email = "Enter a valid email address.";
-    if (!/^[6-9]\d{9}$/.test(values.phone)) next.phone = "Enter a 10-digit Indian mobile number.";
-    if (values.password.length < 6) next.password = "Use at least 6 characters.";
+    if (!isValidEmail(values.email))
+      next.email = "Enter a valid email address.";
+    if (!/^[6-9]\d{9}$/.test(values.phone))
+      next.phone = "Enter a 10-digit Indian mobile number.";
+    if (values.password.length < 6)
+      next.password = "Use at least 6 characters.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -48,7 +72,11 @@ function SignupForm() {
 
     setSubmitting(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, values.email.trim(), values.password);
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        values.email.trim(),
+        values.password,
+      );
       await updateProfile(user, { displayName: values.name.trim() });
 
       // Customer profile. Role is always "customer" — firestore.rules
@@ -69,91 +97,129 @@ function SignupForm() {
   };
 
   return (
-    <div className="dc-card-brutal p-6 sm:p-8">
-      <h1 className="font-display text-3xl font-bold tracking-tight">Join the club</h1>
-      <p className="mt-1 text-sm text-muted">Save your wishlist and get first dibs on new drops.</p>
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 3, sm: 4 },
+        borderRadius: 3,
+        border: "2px solid var(--dc-edge)",
+        boxShadow: "6px 6px 0 var(--dc-edge)",
+      }}
+    >
+      <Typography variant="h4" component="h1" sx={{ fontSize: 30 }}>
+        Join the club
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        Save your wishlist and get first dibs on new drops.
+      </Typography>
 
       {errors.form && (
-        <p role="alert" className="mt-5 rounded-lg p-3 text-sm font-semibold text-white" style={{ background: "var(--dc-danger)" }}>
+        <Alert severity="error" variant="filled" sx={{ mt: 2.5 }}>
           {errors.form}
-        </p>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Name" htmlFor="name" error={errors.name}>
-          <input
-            id="name"
-            name="name"
-            autoComplete="name"
-            value={values.name}
-            onChange={onChange}
-            placeholder="Your name"
-            aria-invalid={Boolean(errors.name)}
-            className="dc-input"
-          />
-        </Field>
+      <Stack
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+        spacing={2.5}
+        sx={{ mt: 3 }}
+      >
+        <TextField
+          id="name"
+          name="name"
+          label="Name"
+          autoComplete="name"
+          value={values.name}
+          onChange={onChange}
+          placeholder="Your name"
+          error={Boolean(errors.name)}
+          helperText={errors.name}
+          fullWidth
+        />
 
-        <Field label="Email" htmlFor="email" error={errors.email}>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={values.email}
-            onChange={onChange}
-            placeholder="you@example.com"
-            aria-invalid={Boolean(errors.email)}
-            className="dc-input"
-          />
-        </Field>
+        <TextField
+          id="email"
+          name="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={values.email}
+          onChange={onChange}
+          placeholder="you@example.com"
+          error={Boolean(errors.email)}
+          helperText={errors.email}
+          slotProps={{ htmlInput: { inputMode: "email" } }}
+          fullWidth
+        />
 
-        <Field label="WhatsApp number" htmlFor="phone" error={errors.phone} help="We'll confirm your orders here.">
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">+91</span>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              value={values.phone}
-              onChange={onChange}
-              placeholder="98765 43210"
-              aria-invalid={Boolean(errors.phone)}
-              className="dc-input pl-12"
-            />
-          </div>
-        </Field>
+        <TextField
+          id="phone"
+          name="phone"
+          label="WhatsApp number"
+          type="tel"
+          autoComplete="tel-national"
+          value={values.phone}
+          onChange={onChange}
+          placeholder="98765 43210"
+          error={Boolean(errors.phone)}
+          helperText={errors.phone || "We'll confirm your orders here."}
+          slotProps={{
+            htmlInput: { inputMode: "numeric" },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">+91</InputAdornment>
+              ),
+            },
+          }}
+          fullWidth
+        />
 
-        <Field label="Password" htmlFor="password" error={errors.password} help="At least 6 characters.">
-          <PasswordInput
-            id="password"
-            name="password"
-            autoComplete="new-password"
-            value={values.password}
-            onChange={onChange}
-            placeholder="••••••••"
-            aria-invalid={Boolean(errors.password)}
-          />
-        </Field>
+        <PasswordInput
+          id="password"
+          name="password"
+          label="Password"
+          autoComplete="new-password"
+          value={values.password}
+          onChange={onChange}
+          placeholder="••••••••"
+          error={Boolean(errors.password)}
+          helperText={errors.password || "At least 6 characters."}
+        />
 
-        <button type="submit" disabled={submitting} className="btn-brutal btn-primary w-full">
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={18} /> : undefined}
+        >
           {submitting ? "Creating account…" : "Create account"}
-        </button>
-      </form>
+        </Button>
+      </Stack>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 3, textAlign: "center" }}
+      >
         Already a member?{" "}
-        <Link
-          href={redirect ? `/auth/login?redirect=${encodeURIComponent(redirect)}` : "/auth/login"}
-          className="font-bold underline"
-          style={{ color: "var(--dc-text)" }}
+        <MuiLink
+          component={Link}
+          href={
+            redirect
+              ? `/auth/login?redirect=${encodeURIComponent(redirect)}`
+              : "/auth/login"
+          }
+          color="text.primary"
+          sx={{ fontWeight: 700 }}
         >
           Log in
-        </Link>
-      </p>
-    </div>
+        </MuiLink>
+      </Typography>
+    </Paper>
   );
 }
 

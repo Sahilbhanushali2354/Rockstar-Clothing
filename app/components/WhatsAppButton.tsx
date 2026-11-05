@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaWhatsapp } from "react-icons/fa";
+import { Button } from "@mui/material";
+import { WhatsApp } from "@mui/icons-material";
 
 import { trackPixel } from "@/app/lib/metaPixel";
 import {
@@ -23,7 +24,7 @@ interface WhatsAppButtonProps {
 
 /*
  * Primary CTA: hands the order to WhatsApp and fires Meta Pixel
- * Lead + Contact. Uses a real <a> (not window.open) so Instagram's
+ * Lead + Contact. Renders a real <a> (not window.open) so Instagram's
  * in-app browser hands off to the WhatsApp app reliably, and opens a
  * new tab so the pixel request isn't killed by navigation.
  */
@@ -63,18 +64,23 @@ export default function WhatsAppButton({
   };
 
   return (
-    <a
+    <Button
+      component="a"
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      aria-disabled={isDisabled}
-      className={`btn-brutal btn-whatsapp ${
-        isDisabled ? "pointer-events-none opacity-50" : ""
-      } ${className}`}
+      disabled={isDisabled}
+      variant="contained"
+      color="primary"
+      size="large"
+      startIcon={
+        <WhatsApp aria-hidden sx={{ fontSize: "1.25rem !important" }} />
+      }
+      className={className}
+      sx={{ whiteSpace: "nowrap" }}
     >
-      <FaWhatsapp aria-hidden className="text-xl" />
-      <span>{label}</span>
-    </a>
+      {label}
+    </Button>
   );
 }

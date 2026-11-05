@@ -2,7 +2,10 @@
 
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CssBaseline } from "@mui/material";
-import { ThemeProvider as MuiThemeProvider, useColorScheme } from "@mui/material/styles";
+import {
+  ThemeProvider as MuiThemeProvider,
+  useColorScheme,
+} from "@mui/material/styles";
 
 import { muiTheme } from "../theme/muiTheme";
 import { THEME_STORAGE_KEY } from "../theme/tokens";
@@ -20,7 +23,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function useThemeMode() {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error("useThemeMode must be used inside ThemeProvider");
+  if (!context)
+    throw new Error("useThemeMode must be used inside ThemeProvider");
   return context;
 }
 
@@ -28,7 +32,8 @@ export function useThemeMode() {
 function ModeBridge({ children }: { children: React.ReactNode }) {
   const { mode, systemMode, setMode } = useColorScheme();
 
-  const resolved: Mode = (mode === "system" ? systemMode : mode) === "dark" ? "dark" : "light";
+  const resolved: Mode =
+    (mode === "system" ? systemMode : mode) === "dark" ? "dark" : "light";
 
   const toggleTheme = useCallback(
     () => setMode(resolved === "dark" ? "light" : "dark"),
@@ -36,11 +41,17 @@ function ModeBridge({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ mode: resolved, toggleTheme, setMode: (next: Mode | "system") => setMode(next) }),
+    () => ({
+      mode: resolved,
+      toggleTheme,
+      setMode: (next: Mode | "system") => setMode(next),
+    }),
     [resolved, toggleTheme, setMode],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 /*
@@ -49,9 +60,17 @@ function ModeBridge({ children }: { children: React.ReactNode }) {
  *  - MUI toggles the `.dark` class on <html>, which also drives Tailwind
  *    `dark:` and the --dc-* CSS variables.
  */
-export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+export default function ThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <MuiThemeProvider theme={muiTheme} modeStorageKey={THEME_STORAGE_KEY} disableTransitionOnChange>
+    <MuiThemeProvider
+      theme={muiTheme}
+      modeStorageKey={THEME_STORAGE_KEY}
+      disableTransitionOnChange
+    >
       <CssBaseline enableColorScheme />
       <ModeBridge>{children}</ModeBridge>
     </MuiThemeProvider>

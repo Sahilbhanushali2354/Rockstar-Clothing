@@ -1,4 +1,13 @@
-const inr = (value: number) => `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+import { Box, Chip, Stack, Typography } from "@mui/material";
+
+const inr = (value: number) =>
+  `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+const PRICE_SIZE = {
+  sm: { xs: 14, sm: 16 },
+  md: { xs: 18 },
+  lg: { xs: 30, sm: 36 },
+} as const;
 
 /* Price with optional crossed-out compare-at price and % off badge. */
 export default function Price({
@@ -17,18 +26,40 @@ export default function Price({
       ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
       : 0;
 
-  const priceSize = { sm: "text-sm sm:text-base", md: "text-lg", lg: "text-3xl sm:text-4xl" }[size];
-
   return (
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${className}`}>
-      <span className={`font-display font-bold ${priceSize}`}>{inr(price)}</span>
+    <Stack
+      direction="row"
+      className={className}
+      sx={{ flexWrap: "wrap", alignItems: "center", columnGap: 1, rowGap: 0.5 }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          fontFamily: "var(--font-display), var(--font-body), sans-serif",
+          fontWeight: 700,
+          fontSize: PRICE_SIZE[size],
+          lineHeight: 1.4,
+        }}
+      >
+        {inr(price)}
+      </Typography>
       {discount > 0 && (
         <>
-          <s className="text-xs text-muted sm:text-sm">{inr(compareAtPrice!)}</s>
-          <span className="dc-badge dc-badge-live">−{discount}%</span>
+          <Box
+            component="s"
+            sx={{ fontSize: { xs: 12, sm: 14 }, color: "text.secondary" }}
+          >
+            {inr(compareAtPrice!)}
+          </Box>
+          <Chip
+            label={`−${discount}%`}
+            size="small"
+            color="primary"
+            sx={{ height: 20, border: "1.5px solid var(--dc-ink)" }}
+          />
         </>
       )}
-    </div>
+    </Stack>
   );
 }
 

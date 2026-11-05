@@ -34,7 +34,10 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   // Pages set `title: "Shop all"` → "Shop all · DOPAMINE CLUB"
-  title: { default: "DOPAMINE CLUB — Streetwear & viral drops", template: "%s · DOPAMINE CLUB" },
+  title: {
+    default: "DOPAMINE CLUB — Streetwear & viral drops",
+    template: "%s · DOPAMINE CLUB",
+  },
   description: DESCRIPTION,
   applicationName: "DOPAMINE CLUB",
   openGraph: {
@@ -71,7 +74,11 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         {/* Applies the saved/OS theme class before first paint (no flash). */}
-        <InitColorSchemeScript attribute="class" modeStorageKey={THEME_STORAGE_KEY} defaultMode="system" />
+        <InitColorSchemeScript
+          attribute="class"
+          modeStorageKey={THEME_STORAGE_KEY}
+          defaultMode="system"
+        />
         <MetaPixel />
         <AppRouterCacheProvider>
           <ThemeProvider>

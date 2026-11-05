@@ -5,7 +5,6 @@ import { Provider } from "react-redux";
 import { AppStore, makeStore } from "../lib/store";
 import { setCartItems } from "../lib/features/cart/cartSlice";
 
-
 export default function StoreProvider({
   children,
 }: {
@@ -34,10 +33,7 @@ export default function StoreProvider({
       const state = storeRef.current?.getState();
 
       if (state) {
-        localStorage.setItem(
-          "rockstar-cart",
-          JSON.stringify(state.cart.items)
-        );
+        localStorage.setItem("rockstar-cart", JSON.stringify(state.cart.items));
       }
     });
 
@@ -46,9 +42,5 @@ export default function StoreProvider({
     };
   }, []);
 
-  return (
-    <Provider store={storeRef.current}>
-      {children}
-    </Provider>
-  );
+  return <Provider store={storeRef.current}>{children}</Provider>;
 }

@@ -1,22 +1,39 @@
 "use client";
 
-import { useState, type InputHTMLAttributes } from "react";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useState } from "react";
+import {
+  IconButton,
+  InputAdornment,
+  TextField,
+  type TextFieldProps,
+} from "@mui/material";
+import { VisibilityOffOutlined, VisibilityOutlined } from "@mui/icons-material";
 
-export default function PasswordInput(props: InputHTMLAttributes<HTMLInputElement>) {
+export default function PasswordInput(props: TextFieldProps) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
-      <input {...props} type={visible ? "text" : "password"} className={`dc-input pr-12 ${props.className ?? ""}`} />
-      <button
-        type="button"
-        onClick={() => setVisible((v) => !v)}
-        className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-muted hover:bg-surface-2"
-        aria-label={visible ? "Hide password" : "Show password"}
-      >
-        {visible ? <FiEyeOff /> : <FiEye />}
-      </button>
-    </div>
+    <TextField
+      fullWidth
+      {...props}
+      type={visible ? "text" : "password"}
+      slotProps={{
+        ...props.slotProps,
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                edge="end"
+                onClick={() => setVisible((v) => !v)}
+                aria-label={visible ? "Hide password" : "Show password"}
+                sx={{ color: "text.secondary" }}
+              >
+                {visible ? <VisibilityOffOutlined /> : <VisibilityOutlined />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
+      }}
+    />
   );
 }

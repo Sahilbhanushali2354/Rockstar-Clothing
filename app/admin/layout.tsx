@@ -1,22 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-  FiExternalLink,
-  FiGrid,
-  FiLayers,
-  FiLogOut,
-  FiMenu,
-  FiPackage,
-  FiPlus,
-  FiSliders,
-  FiX,
-} from "react-icons/fi";
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Drawer,
+  IconButton,
+  Link as MuiLink,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  Add,
+  CategoryOutlined,
+  Close,
+  DashboardOutlined,
+  Inventory2Outlined,
+  Logout,
+  Menu as MenuIcon,
+  OpenInNew,
+  TuneOutlined,
+} from "@mui/icons-material";
 
 import { auth } from "@/firebase/firebase.config";
 import AdminGuard, { useAdminUser } from "@/app/components/AdminGuard";
@@ -24,11 +39,33 @@ import BrandLogo from "@/app/components/BrandLogo";
 import { ThemeSwitch } from "@/app/components/ui";
 import { useThemeMode } from "@/app/providers/ThemeProvider";
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", icon: FiGrid, exact: true },
-  { href: "/admin/products", label: "Products", icon: FiPackage },
-  { href: "/admin/categories", label: "Categories", icon: FiLayers },
-  { href: "/admin/settings", label: "Store settings", icon: FiSliders },
+const NAV: {
+  href: string;
+  label: string;
+  icon: ReactElement;
+  exact?: boolean;
+}[] = [
+  {
+    href: "/admin",
+    label: "Dashboard",
+    icon: <DashboardOutlined fontSize="small" />,
+    exact: true,
+  },
+  {
+    href: "/admin/products",
+    label: "Products",
+    icon: <Inventory2Outlined fontSize="small" />,
+  },
+  {
+    href: "/admin/categories",
+    label: "Categories",
+    icon: <CategoryOutlined fontSize="small" />,
+  },
+  {
+    href: "/admin/settings",
+    label: "Store settings",
+    icon: <TuneOutlined fontSize="small" />,
+  },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean) {
@@ -36,6 +73,20 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   // /admin/products, /admin/products/new, /admin/products/[id] …
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+const navItemSx = {
+  borderRadius: 2,
+  py: 1.25,
+  px: 1.5,
+  color: "text.secondary",
+  "& .MuiListItemIcon-root": { minWidth: 32, color: "inherit" },
+  "& .MuiListItemText-primary": { fontSize: 14, fontWeight: 700 },
+  "&:hover": { bgcolor: "var(--dc-surface-2)" },
+  "&.Mui-selected, &.Mui-selected:hover": {
+    bgcolor: "var(--dc-text)",
+    color: "var(--dc-bg)",
+  },
+} as const;
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname() ?? "";
@@ -49,83 +100,138 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-5 pb-5 pt-6">
-        <Link href="/admin" onClick={onNavigate} aria-label="Admin dashboard">
+    <Stack sx={{ height: "100%" }}>
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 2.5,
+          pb: 2.5,
+          pt: 3,
+        }}
+      >
+        <MuiLink
+          component={Link}
+          href="/admin"
+          onClick={onNavigate}
+          aria-label="Admin dashboard"
+          color="inherit"
+          underline="none"
+        >
           <BrandLogo size="sm" />
-        </Link>
-        <span className="dc-badge dc-badge-ink">Admin</span>
-      </div>
+        </MuiLink>
+        <Chip
+          label="Admin"
+          size="small"
+          color="secondary"
+          sx={{ height: 22, borderRadius: 1 }}
+        />
+      </Stack>
 
-      <div className="px-3">
-        <Link
+      <Box sx={{ px: 1.5 }}>
+        <Button
+          component={Link}
           href="/admin/products/new"
           onClick={onNavigate}
-          className="btn-brutal btn-primary btn-sm w-full"
+          variant="contained"
+          fullWidth
+          startIcon={<Add />}
         >
-          <FiPlus /> Add product
-        </Link>
-      </div>
+          Add product
+        </Button>
+      </Box>
 
-      <nav className="mt-6 flex-1 space-y-1 px-3" aria-label="Admin">
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
+      <List
+        component="nav"
+        aria-label="Admin"
+        sx={{
+          mt: 3,
+          flex: 1,
+          px: 1.5,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.5,
+        }}
+      >
+        {NAV.map(({ href, label, icon, exact }) => {
           const active = isActive(pathname, href, exact);
 
           return (
-            <Link
+            <ListItemButton
               key={href}
+              component={Link}
               href={href}
               onClick={onNavigate}
+              selected={active}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors ${
-                active ? "" : "text-muted hover:bg-surface-2"
-              }`}
-              style={
-                active
-                  ? {
-                      background: "var(--dc-text)",
-                      color: "var(--dc-bg)",
-                    }
-                  : undefined
-              }
+              sx={navItemSx}
             >
-              <Icon className="text-base" />
-              {label}
-            </Link>
+              <ListItemIcon>{icon}</ListItemIcon>
+              <ListItemText primary={label} />
+            </ListItemButton>
           );
         })}
 
-        <a
+        <ListItemButton
+          component="a"
           href="/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-muted transition-colors hover:bg-surface-2"
+          sx={navItemSx}
         >
-          <FiExternalLink className="text-base" />
-          View store
-        </a>
-      </nav>
+          <ListItemIcon>
+            <OpenInNew fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="View store" />
+        </ListItemButton>
+      </List>
 
-      <div className="border-t border-line p-3">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-black uppercase"
-            style={{ background: "var(--dc-acid)", color: "var(--dc-ink)", border: "2px solid var(--dc-edge)" }}
+      <Box sx={{ borderTop: "1px solid var(--dc-line)", p: 1.5 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Avatar
+            variant="rounded"
             aria-hidden
+            sx={{
+              width: 36,
+              height: 36,
+              fontSize: 14,
+              fontWeight: 900,
+              textTransform: "uppercase",
+              bgcolor: "var(--dc-acid)",
+              color: "var(--dc-ink)",
+              border: "2px solid var(--dc-edge)",
+            }}
           >
             {(user?.email ?? "A").charAt(0)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold">{user?.email}</p>
-            <p className="text-[11px] text-muted">Store admin</p>
-          </div>
+          </Avatar>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography noWrap sx={{ fontSize: 12, fontWeight: 700 }}>
+              {user?.email}
+            </Typography>
+            <Typography color="text.secondary" sx={{ fontSize: 11 }}>
+              Store admin
+            </Typography>
+          </Box>
           <ThemeSwitch />
-        </div>
-        <button type="button" onClick={handleLogout} className="btn btn-ghost mt-2 w-full justify-start text-muted">
-          <FiLogOut /> Log out
-        </button>
-      </div>
-    </div>
+        </Stack>
+        <Button
+          variant="text"
+          fullWidth
+          startIcon={<Logout />}
+          onClick={handleLogout}
+          sx={{
+            mt: 1,
+            justifyContent: "flex-start",
+            color: "text.secondary",
+            textTransform: "none",
+            letterSpacing: 0,
+          }}
+        >
+          Log out
+        </Button>
+      </Box>
+    </Stack>
   );
 }
 
@@ -138,53 +244,100 @@ function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setDrawerOpen(false), [pathname]);
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--dc-bg)", color: "var(--dc-text)" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "var(--dc-bg)",
+        color: "var(--dc-text)",
+      }}
+    >
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-line bg-surface lg:block">
+      <Box
+        component="aside"
+        sx={{
+          position: "fixed",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: 256,
+          display: { xs: "none", lg: "block" },
+          borderRight: "1px solid var(--dc-line)",
+          bgcolor: "var(--dc-surface)",
+        }}
+      >
         <Sidebar />
-      </aside>
+      </Box>
 
       {/* Mobile top bar */}
-      <header
-        className="sticky z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-3 lg:hidden"
-        style={{ top: "env(safe-area-inset-top, 0px)" }}
+      <Stack
+        component="header"
+        direction="row"
+        sx={{
+          position: "sticky",
+          top: "env(safe-area-inset-top, 0px)",
+          zIndex: 30,
+          display: { lg: "none" },
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid var(--dc-line)",
+          bgcolor: "var(--dc-surface)",
+          px: 2,
+          py: 1.5,
+        }}
       >
-        <button
-          type="button"
+        <IconButton
           onClick={() => setDrawerOpen(true)}
-          className="btn btn-ghost px-2"
           aria-label="Open menu"
           aria-expanded={drawerOpen}
         >
-          <FiMenu className="text-xl" />
-        </button>
-        <Link href="/admin" aria-label="Admin dashboard">
+          <MenuIcon />
+        </IconButton>
+        <MuiLink
+          component={Link}
+          href="/admin"
+          aria-label="Admin dashboard"
+          color="inherit"
+          underline="none"
+        >
           <BrandLogo size="sm" />
-        </Link>
+        </MuiLink>
         <ThemeSwitch />
-      </header>
+      </Stack>
 
       {/* Mobile drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDrawerOpen(false)} aria-hidden />
-          <aside className="absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r-2 bg-surface" style={{ borderColor: "var(--dc-edge)" }}>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              className="btn btn-ghost absolute right-2 top-2 z-10 px-2"
-              aria-label="Close menu"
-            >
-              <FiX className="text-lg" />
-            </button>
-            <Sidebar onNavigate={() => setDrawerOpen(false)} />
-          </aside>
-        </div>
-      )}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{ display: { lg: "none" } }}
+        slotProps={{
+          paper: {
+            sx: { width: 288, maxWidth: "85vw", bgcolor: "var(--dc-surface)" },
+          },
+        }}
+      >
+        <IconButton
+          onClick={() => setDrawerOpen(false)}
+          aria-label="Close menu"
+          sx={{ position: "absolute", right: 8, top: 8, zIndex: 1 }}
+        >
+          <Close />
+        </IconButton>
+        <Sidebar onNavigate={() => setDrawerOpen(false)} />
+      </Drawer>
 
-      <main className="lg:pl-64">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 md:py-10 lg:px-10">{children}</div>
-      </main>
+      <Box component="main" sx={{ pl: { lg: "256px" } }}>
+        <Box
+          sx={{
+            mx: "auto",
+            width: "100%",
+            maxWidth: 1152,
+            px: { xs: 2, sm: 3, lg: 5 },
+            py: { xs: 3, md: 5 },
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
 
       <ToastContainer
         position="bottom-right"
@@ -192,11 +345,15 @@ function Shell({ children }: { children: React.ReactNode }) {
         hideProgressBar
         theme={mode === "dark" ? "dark" : "light"}
       />
-    </div>
+    </Box>
   );
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <AdminGuard>
       <Shell>{children}</Shell>

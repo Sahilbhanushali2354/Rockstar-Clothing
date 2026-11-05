@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "migrate:products": "node --env-file=.env scripts/migrate-products.mjs",
-    "clean:user-passwords": "node --env-file=.env scripts/remove-user-passwords.mjs"
+    "clean:user-passwords": "node --env-file=.env scripts/remove-user-passwords.mjs",
+    "format": "prettier --write \"**/*.{tsx,jsx}\"",
+    "format:check": "prettier --check \"**/*.{tsx,jsx}\""
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

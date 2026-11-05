@@ -1,20 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  FiChevronDown,
-  FiGrid,
-  FiHeart,
-  FiLogOut,
-  FiMenu,
-  FiSearch,
-  FiShoppingBag,
-  FiUser,
-  FiX,
-} from "react-icons/fi";
-import { FaWhatsapp } from "react-icons/fa";
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  Drawer,
+  IconButton,
+  Link as MuiLink,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  Close,
+  DashboardOutlined,
+  FavoriteBorder,
+  KeyboardArrowDown,
+  Logout,
+  Menu as MenuIcon,
+  PersonOutlined,
+  Search,
+  ShoppingBagOutlined,
+  WhatsApp,
+} from "@mui/icons-material";
 
 import BrandLogo from "./BrandLogo";
 import { ThemeSwitch } from "./ui";
@@ -30,104 +47,122 @@ import { STORE } from "../theme/tokens";
 const initialOf = (name: string, email?: string | null) =>
   (name || email || "?").trim().charAt(0).toUpperCase();
 
+const avatarSx = (size: number) => ({
+  width: size,
+  height: size,
+  fontSize: size * 0.45,
+  fontWeight: 900,
+  bgcolor: "var(--dc-acid)",
+  color: "var(--dc-ink)",
+  border: "2px solid var(--dc-ink)",
+});
+
+const dropdownPaper = {
+  sx: { mt: 1.5, p: 1, borderRadius: 3, "& .MuiMenu-list": { p: 0 } },
+};
+
+const menuItemSx = {
+  borderRadius: 2,
+  py: 1.25,
+  fontSize: 14,
+  fontWeight: 700,
+} as const;
+
 /* Account button: login link when signed out, avatar + dropdown when signed in. */
-function AccountMenu({ className = "" }: { className?: string }) {
+function AccountMenu() {
   const router = useRouter();
   const pathname = usePathname();
   const { ready, user, name, isAdmin } = useAuthUser();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
-  useEffect(() => setOpen(false), [pathname]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (event: MouseEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  useEffect(() => setAnchor(null), [pathname]);
 
   if (!ready || !user) {
     return (
-      <IconLink href={`/auth/login?redirect=${encodeURIComponent(pathname || "/")}`} label="Log in" className={className}>
-        <FiUser className="text-lg" />
+      <IconLink
+        href={`/auth/login?redirect=${encodeURIComponent(pathname || "/")}`}
+        label="Log in"
+      >
+        <PersonOutlined />
       </IconLink>
     );
   }
 
   const handleLogout = async () => {
-    setOpen(false);
+    setAnchor(null);
     await logout();
     router.refresh();
   };
 
-  const item = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold hover:bg-surface-2";
-
   return (
-    <div ref={ref} className={`relative ${className}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
+    <>
+      <IconButton
+        onClick={(event) => setAnchor(event.currentTarget)}
+        aria-expanded={Boolean(anchor)}
         aria-haspopup="menu"
         aria-label="Account menu"
-        className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-surface-2"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-acid text-sm font-black text-ink">
-          {initialOf(name, user.email)}
-        </span>
-      </button>
+        <Avatar sx={avatarSx(32)}>{initialOf(name, user.email)}</Avatar>
+      </IconButton>
 
-      {open && (
-        <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border-2 border-edge bg-surface p-2 shadow-brutal">
-          <div className="border-b border-line px-3 pb-2.5 pt-1.5">
-            <p className="truncate text-sm font-extrabold">{name || "Hey there"}</p>
-            <p className="truncate text-xs text-muted">{user.email}</p>
-          </div>
-          <div className="py-1">
-            <Link href="/profile" role="menuitem" className={item}>
-              <FiUser /> My account
-            </Link>
-            <Link href="/wishlist" role="menuitem" className={item}>
-              <FiHeart /> Wishlist
-            </Link>
-            {isAdmin && (
-              <Link href="/admin" role="menuitem" className={item}>
-                <FiGrid /> Admin dashboard
-              </Link>
-            )}
-          </div>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={handleLogout}
-            className={`${item} w-full border-t border-line text-muted hover:text-danger`}
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { ...dropdownPaper.sx, width: 240 } } }}
+      >
+        <Box sx={{ px: 1.5, pb: 1.25, pt: 0.75 }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 800 }}>
+            {name || "Hey there"}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            noWrap
+            sx={{ display: "block" }}
           >
-            <FiLogOut /> Log out
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* Count badge on header icons (acid on ink edge). */
-function CountBadge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span
-      className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ink bg-acid px-1 text-[10px] font-black leading-none text-ink"
-      aria-hidden
-    >
-      {count > 99 ? "99+" : count}
-    </span>
+            {user.email}
+          </Typography>
+        </Box>
+        <Divider sx={{ mb: 0.5 }} />
+        <MenuItem component={Link} href="/profile" sx={menuItemSx}>
+          <ListItemIcon>
+            <PersonOutlined fontSize="small" />
+          </ListItemIcon>
+          My account
+        </MenuItem>
+        <MenuItem component={Link} href="/wishlist" sx={menuItemSx}>
+          <ListItemIcon>
+            <FavoriteBorder fontSize="small" />
+          </ListItemIcon>
+          Wishlist
+        </MenuItem>
+        {isAdmin && (
+          <MenuItem component={Link} href="/admin" sx={menuItemSx}>
+            <ListItemIcon>
+              <DashboardOutlined fontSize="small" />
+            </ListItemIcon>
+            Admin dashboard
+          </MenuItem>
+        )}
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem
+          onClick={handleLogout}
+          sx={{
+            ...menuItemSx,
+            color: "text.secondary",
+            "&:hover": { color: "error.main" },
+          }}
+        >
+          <ListItemIcon sx={{ color: "inherit" }}>
+            <Logout fontSize="small" />
+          </ListItemIcon>
+          Log out
+        </MenuItem>
+      </Menu>
+    </>
   );
 }
 
@@ -136,23 +171,22 @@ function IconLink({
   label,
   children,
   count = 0,
-  className = "",
 }: {
   href: string;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   count?: number;
-  className?: string;
 }) {
   return (
-    <Link
+    <IconButton
+      component={Link}
       href={href}
       aria-label={count ? `${label} (${count})` : label}
-      className={`relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-surface-2 ${className}`}
     >
-      {children}
-      <CountBadge count={count} />
-    </Link>
+      <Badge badgeContent={count > 99 ? "99+" : count} invisible={count <= 0}>
+        {children}
+      </Badge>
+    </IconButton>
   );
 }
 
@@ -163,272 +197,516 @@ export default function Navbar() {
   const settings = useStoreSettings();
   const authUser = useAuthUser();
 
+  const cartCount = useAppSelector((state) =>
+    state.cart.items.reduce((total, item) => total + item.quantity, 0),
+  );
+  const wishlistCount = useAppSelector((state) => state.wishlist.items.length);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [shopAnchor, setShopAnchor] = useState<HTMLElement | null>(null);
+
   const handleLogout = async () => {
     setDrawerOpen(false);
     await logout();
     router.refresh();
   };
 
-  const cartCount = useAppSelector((state) => state.cart.items.reduce((total, item) => total + item.quantity, 0));
-  const wishlistCount = useAppSelector((state) => state.wishlist.items.length);
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
-  const shopRef = useRef<HTMLDivElement>(null);
-
   // Close menus on navigation.
   useEffect(() => {
     setDrawerOpen(false);
-    setShopOpen(false);
+    setShopAnchor(null);
   }, [pathname]);
 
-  // Lock scroll while the drawer is open; Esc closes menus.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setDrawerOpen(false);
-        setShopOpen(false);
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [drawerOpen]);
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
-  // Click outside closes the desktop dropdown.
-  useEffect(() => {
-    if (!shopOpen) return;
-    const onClick = (event: MouseEvent) => {
-      if (!shopRef.current?.contains(event.target as Node)) setShopOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [shopOpen]);
+  const navLinkSx = (active: boolean) => ({
+    position: "relative",
+    minHeight: 0,
+    px: 0.5,
+    py: 1,
+    fontSize: 14,
+    fontWeight: 800,
+    letterSpacing: "0.025em",
+    color: active ? "text.primary" : "text.secondary",
+    "&:hover": { bgcolor: "transparent", color: "text.primary" },
+    "&::after": {
+      content: '""',
+      position: "absolute",
+      insetInline: 4,
+      bottom: -2,
+      height: 3,
+      borderRadius: 999,
+      bgcolor: "var(--dc-acid)",
+      transform: active ? "scaleX(1)" : "scaleX(0)",
+      transition: "transform 150ms",
+    },
+    "&:hover::after": { transform: "scaleX(1)" },
+  });
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  const navLink = (href: string) =>
-    `relative px-1 py-2 text-sm font-extrabold uppercase tracking-wide transition-colors after:absolute after:inset-x-1 after:-bottom-0.5 after:h-[3px] after:rounded-full after:bg-acid after:transition-transform ${
-      isActive(href) ? "after:scale-x-100" : "text-muted hover:text-fg after:scale-x-0 hover:after:scale-x-100"
-    }`;
-
-  const whatsappHref = buildWhatsAppUrl(`Hey ${STORE.name}! 👋 I have a question.`);
+  const whatsappHref = buildWhatsAppUrl(
+    `Hey ${STORE.name}! 👋 I have a question.`,
+  );
 
   return (
     <>
-      <Marquee items={settings.announcements} tone="inverse" className="border-y-0" />
+      <Marquee items={settings.announcements} tone="inverse" border="none" />
 
-      <header
-        className="sticky z-40 border-b-2 border-edge bg-bg"
-        style={{ top: "env(safe-area-inset-top, 0px)" }}
+      <Box
+        component="header"
+        sx={{
+          position: "sticky",
+          top: "env(safe-area-inset-top, 0px)",
+          zIndex: 40,
+          borderBottom: "2px solid var(--dc-edge)",
+          bgcolor: "var(--dc-bg)",
+        }}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:px-6 lg:h-[72px] lg:px-8">
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            mx: "auto",
+            maxWidth: 1280,
+            height: { xs: 64, lg: 72 },
+            alignItems: "center",
+            px: { xs: 1.5, sm: 3, lg: 4 },
+          }}
+        >
           {/* Mobile: menu */}
-          <button
-            type="button"
+          <IconButton
             onClick={() => setDrawerOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-surface-2 lg:hidden"
             aria-label="Open menu"
             aria-expanded={drawerOpen}
+            sx={{ display: { lg: "none" } }}
           >
-            <FiMenu className="text-xl" />
-          </button>
+            <MenuIcon />
+          </IconButton>
 
-          <Link href="/" aria-label="DOPAMINE CLUB home" className="mx-auto shrink-0 lg:mx-0 lg:mr-8">
+          <MuiLink
+            component={Link}
+            href="/"
+            aria-label="DOPAMINE CLUB home"
+            color="inherit"
+            underline="none"
+            sx={{
+              flexShrink: 0,
+              mx: { xs: "auto !important", lg: "0 !important" },
+              mr: { lg: "32px !important" },
+            }}
+          >
             <BrandLogo size="md" />
-          </Link>
+          </MuiLink>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
-            <Link href="/" className={navLink("/")}>
+          <Stack
+            component="nav"
+            aria-label="Main"
+            direction="row"
+            spacing={3}
+            sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center" }}
+          >
+            <Button
+              component={Link}
+              href="/"
+              variant="text"
+              sx={navLinkSx(isActive("/"))}
+            >
               Home
-            </Link>
+            </Button>
 
-            <div className="relative" ref={shopRef}>
-              <button
-                type="button"
-                onClick={() => setShopOpen((open) => !open)}
-                aria-expanded={shopOpen}
-                aria-haspopup="true"
-                className={`${navLink("/shop")} inline-flex items-center gap-1 ${
-                  pathname.startsWith("/category") ? "!text-fg after:!scale-x-100" : ""
-                }`}
-              >
-                Shop <FiChevronDown className={`transition-transform ${shopOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {shopOpen && (
-                <div className="absolute left-0 top-full z-50 mt-3 w-64 rounded-xl border-2 border-edge bg-surface p-2 shadow-brutal">
-                  <Link href="/shop" className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-extrabold uppercase hover:bg-acid hover:text-ink">
-                    Shop all <span aria-hidden>→</span>
-                  </Link>
-                  {categories.length > 0 && <div className="my-1 border-t border-line" />}
-                  {categories.map((category) => (
-                    <Link
-                      key={category.id}
-                      href={`/category/${category.slug}`}
-                      className="block rounded-lg px-3 py-2 text-sm font-bold hover:bg-surface-2"
-                    >
-                      {category.name}
-                    </Link>
-                  ))}
-                </div>
+            <Button
+              variant="text"
+              onClick={(event) => setShopAnchor(event.currentTarget)}
+              aria-expanded={Boolean(shopAnchor)}
+              aria-haspopup="true"
+              endIcon={
+                <KeyboardArrowDown
+                  sx={{
+                    transition: "transform 150ms",
+                    transform: shopAnchor ? "rotate(180deg)" : "none",
+                  }}
+                />
+              }
+              sx={navLinkSx(
+                isActive("/shop") || pathname.startsWith("/category"),
               )}
-            </div>
+            >
+              Shop
+            </Button>
+
+            <Menu
+              anchorEl={shopAnchor}
+              open={Boolean(shopAnchor)}
+              onClose={() => setShopAnchor(null)}
+              slotProps={{ paper: { sx: { ...dropdownPaper.sx, width: 256 } } }}
+            >
+              <MenuItem
+                component={Link}
+                href="/shop"
+                sx={{
+                  ...menuItemSx,
+                  justifyContent: "space-between",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  "&:hover": {
+                    bgcolor: "var(--dc-acid)",
+                    color: "var(--dc-ink)",
+                  },
+                }}
+              >
+                Shop all{" "}
+                <Box component="span" aria-hidden>
+                  →
+                </Box>
+              </MenuItem>
+              {categories.length > 0 && <Divider sx={{ my: 0.5 }} />}
+              {categories.map((category) => (
+                <MenuItem
+                  key={category.id}
+                  component={Link}
+                  href={`/category/${category.slug}`}
+                  sx={{ ...menuItemSx, py: 1 }}
+                >
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Menu>
 
             {categories.slice(0, 3).map((category) => (
-              <Link key={category.id} href={`/category/${category.slug}`} className={navLink(`/category/${category.slug}`)}>
+              <Button
+                key={category.id}
+                component={Link}
+                href={`/category/${category.slug}`}
+                variant="text"
+                sx={navLinkSx(isActive(`/category/${category.slug}`))}
+              >
                 {category.name}
-              </Link>
+              </Button>
             ))}
-          </nav>
+          </Stack>
 
           {/* Actions */}
-          <div className="flex items-center gap-0.5 lg:ml-auto">
-            <IconLink href="/shop" label="Search products" className="hidden sm:flex">
-              <FiSearch className="text-lg" />
-            </IconLink>
-            <IconLink href="/wishlist" label="Wishlist" count={wishlistCount} className="hidden sm:flex">
-              <FiHeart className="text-lg" />
-            </IconLink>
-            <AccountMenu className="hidden sm:flex" />
-            <ThemeSwitch className="hidden lg:inline-flex" />
+          <Stack
+            direction="row"
+            spacing={0.25}
+            sx={{ alignItems: "center", ml: { lg: "auto !important" } }}
+          >
+            <Box sx={{ display: { xs: "none", sm: "flex" } }}>
+              <IconLink href="/shop" label="Search products">
+                <Search />
+              </IconLink>
+              <IconLink href="/wishlist" label="Wishlist" count={wishlistCount}>
+                <FavoriteBorder />
+              </IconLink>
+              <AccountMenu />
+            </Box>
+            <Box sx={{ display: { xs: "none", lg: "flex" } }}>
+              <ThemeSwitch />
+            </Box>
             <IconLink href="/cart" label="Cart" count={cartCount}>
-              <FiShoppingBag className="text-lg" />
+              <ShoppingBagOutlined />
             </IconLink>
-          </div>
-        </div>
-      </header>
+          </Stack>
+        </Stack>
+      </Box>
 
       {/* Mobile drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDrawerOpen(false)} aria-hidden />
-          <div className="absolute inset-y-0 left-0 flex w-[86vw] max-w-sm flex-col border-r-2 border-edge bg-bg">
-            <div className="flex items-center justify-between border-b-2 border-edge px-4 py-3">
-              <BrandLogo size="sm" />
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-surface-2"
-                aria-label="Close menu"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{ display: { lg: "none" } }}
+        slotProps={{
+          paper: { sx: { width: "86vw", maxWidth: 384 }, "aria-label": "Menu" },
+        }}
+      >
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "2px solid var(--dc-edge)",
+            px: 2,
+            py: 1.5,
+          }}
+        >
+          <BrandLogo size="sm" />
+          <IconButton
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close menu"
+          >
+            <Close />
+          </IconButton>
+        </Stack>
 
-            <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Mobile">
-              {[
-                { href: "/", label: "Home" },
-                { href: "/shop", label: "Shop all" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center justify-between border-b border-line py-3 font-display text-3xl font-bold"
-                >
-                  {item.label}
-                  {isActive(item.href) && <span className="h-3 w-3 rounded-full border-2 border-ink bg-acid" aria-hidden />}
-                </Link>
-              ))}
-
-              {categories.length > 0 && (
-                <>
-                  <p className="mb-2 mt-6 text-xs font-extrabold uppercase tracking-[0.2em] text-muted">Collections</p>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                      <Link
-                        key={category.id}
-                        href={`/category/${category.slug}`}
-                        className={`rounded-full border-2 border-edge px-3.5 py-1.5 text-sm font-bold ${
-                          isActive(`/category/${category.slug}`) ? "bg-acid text-ink" : ""
-                        }`}
-                      >
-                        {category.name}
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Account */}
-              <div className="mt-6 rounded-xl border-2 border-edge p-3">
-                {authUser.user ? (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-acid font-black text-ink">
-                        {initialOf(authUser.name, authUser.user.email)}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-extrabold">{authUser.name || "Hey there"}</p>
-                        <p className="truncate text-xs text-muted">{authUser.user.email}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {authUser.isAdmin && (
-                        <Link href="/admin" className="btn flex-1">
-                          <FiGrid /> Admin
-                        </Link>
-                      )}
-                      <button type="button" onClick={handleLogout} className="btn btn-danger-soft flex-1">
-                        <FiLogOut /> Log out
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex gap-2">
-                    <Link href={`/auth/login?redirect=${encodeURIComponent(pathname)}`} className="btn-brutal btn-ink btn-sm flex-1">
-                      Log in
-                    </Link>
-                    <Link href={`/auth/signup?redirect=${encodeURIComponent(pathname)}`} className="btn-brutal btn-primary btn-sm flex-1">
-                      Sign up
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {[
-                  { href: "/wishlist", label: "Wishlist", icon: FiHeart, count: wishlistCount },
-                  { href: "/cart", label: "Cart", icon: FiShoppingBag, count: cartCount },
-                  { href: "/profile", label: "Account", icon: FiUser, count: 0 },
-                ].map(({ href, label, icon: Icon, count }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="relative flex flex-col items-center gap-1 rounded-xl border-2 border-line py-3 text-xs font-bold"
-                  >
-                    <Icon className="text-lg" />
-                    {label}
-                    {count > 0 && (
-                      <span className="absolute right-2 top-2 rounded-full bg-acid px-1.5 text-[10px] font-black text-ink">
-                        {count}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-
-            <div
-              className="space-y-3 border-t-2 border-edge px-4 pt-4"
-              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+        <Box
+          component="nav"
+          aria-label="Mobile"
+          sx={{ flex: 1, overflowY: "auto", px: 2, py: 2.5 }}
+        >
+          {[
+            { href: "/", label: "Home" },
+            { href: "/shop", label: "Shop all" },
+          ].map((item) => (
+            <MuiLink
+              key={item.href}
+              component={Link}
+              href={item.href}
+              color="inherit"
+              underline="none"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid var(--dc-line)",
+                py: 1.5,
+                fontFamily: "var(--font-display), var(--font-body), sans-serif",
+                fontSize: 30,
+                fontWeight: 700,
+              }}
             >
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn-brutal btn-primary w-full">
-                <FaWhatsapp className="text-lg" /> Chat with us
-              </a>
-              <div className="flex items-center justify-between text-sm font-bold text-muted">
-                <a href={instagramUrl(settings.instagramHandle)} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                  @{settings.instagramHandle}
-                </a>
-                <ThemeSwitch />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+              {item.label}
+              {isActive(item.href) && (
+                <Box
+                  component="span"
+                  aria-hidden
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    border: "2px solid var(--dc-ink)",
+                    bgcolor: "var(--dc-acid)",
+                  }}
+                />
+              )}
+            </MuiLink>
+          ))}
+
+          {categories.length > 0 && (
+            <>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  mb: 1,
+                  mt: 3,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                Collections
+              </Typography>
+              <Stack
+                direction="row"
+                useFlexGap
+                spacing={1}
+                sx={{ flexWrap: "wrap" }}
+              >
+                {categories.map((category) => {
+                  const active = isActive(`/category/${category.slug}`);
+                  return (
+                    <Chip
+                      key={category.id}
+                      component={Link}
+                      href={`/category/${category.slug}`}
+                      clickable
+                      label={category.name}
+                      sx={{
+                        borderRadius: 999,
+                        border: "2px solid var(--dc-edge)",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        textTransform: "none",
+                        letterSpacing: 0,
+                        bgcolor: active ? "var(--dc-acid)" : "transparent",
+                        color: active ? "var(--dc-ink)" : "inherit",
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+            </>
+          )}
+
+          {/* Account */}
+          <Paper
+            variant="outlined"
+            sx={{
+              mt: 3,
+              p: 1.5,
+              borderRadius: 3,
+              border: "2px solid var(--dc-edge)",
+            }}
+          >
+            {authUser.user ? (
+              <>
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: "center" }}
+                >
+                  <Avatar sx={avatarSx(40)}>
+                    {initialOf(authUser.name, authUser.user.email)}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography noWrap sx={{ fontWeight: 800 }}>
+                      {authUser.name || "Hey there"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      noWrap
+                      sx={{ display: "block" }}
+                    >
+                      {authUser.user.email}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Stack
+                  direction="row"
+                  useFlexGap
+                  spacing={1}
+                  sx={{ mt: 1.5, flexWrap: "wrap" }}
+                >
+                  {authUser.isAdmin && (
+                    <Button
+                      component={Link}
+                      href="/admin"
+                      variant="outlined"
+                      startIcon={<DashboardOutlined />}
+                      sx={{ flex: 1 }}
+                    >
+                      Admin
+                    </Button>
+                  )}
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Logout />}
+                    onClick={handleLogout}
+                    sx={{ flex: 1, color: "error.main" }}
+                  >
+                    Log out
+                  </Button>
+                </Stack>
+              </>
+            ) : (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  component={Link}
+                  href={`/auth/login?redirect=${encodeURIComponent(pathname)}`}
+                  variant="contained"
+                  color="secondary"
+                  sx={{ flex: 1 }}
+                >
+                  Log in
+                </Button>
+                <Button
+                  component={Link}
+                  href={`/auth/signup?redirect=${encodeURIComponent(pathname)}`}
+                  variant="contained"
+                  sx={{ flex: 1 }}
+                >
+                  Sign up
+                </Button>
+              </Stack>
+            )}
+          </Paper>
+
+          <Box
+            sx={{
+              mt: 1.5,
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 1,
+            }}
+          >
+            {[
+              {
+                href: "/wishlist",
+                label: "Wishlist",
+                icon: <FavoriteBorder />,
+                count: wishlistCount,
+              },
+              {
+                href: "/cart",
+                label: "Cart",
+                icon: <ShoppingBagOutlined />,
+                count: cartCount,
+              },
+              {
+                href: "/profile",
+                label: "Account",
+                icon: <PersonOutlined />,
+                count: 0,
+              },
+            ].map(({ href, label, icon, count }) => (
+              <Button
+                key={href}
+                component={Link}
+                href={href}
+                variant="text"
+                sx={{
+                  flexDirection: "column",
+                  gap: 0.5,
+                  py: 1.5,
+                  borderRadius: 3,
+                  border: "2px solid var(--dc-line)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  letterSpacing: 0,
+                }}
+              >
+                <Badge badgeContent={count} invisible={count <= 0}>
+                  {icon}
+                </Badge>
+                {label}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
+        <Stack
+          spacing={1.5}
+          sx={{
+            borderTop: "2px solid var(--dc-edge)",
+            px: 2,
+            pt: 2,
+            pb: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
+          <Button
+            component="a"
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="contained"
+            size="large"
+            fullWidth
+            startIcon={<WhatsApp />}
+          >
+            Chat with us
+          </Button>
+          <Stack
+            direction="row"
+            sx={{ alignItems: "center", justifyContent: "space-between" }}
+          >
+            <MuiLink
+              href={instagramUrl(settings.instagramHandle)}
+              target="_blank"
+              rel="noopener noreferrer"
+              color="text.secondary"
+              underline="hover"
+              sx={{ fontSize: 14, fontWeight: 700 }}
+            >
+              @{settings.instagramHandle}
+            </MuiLink>
+            <ThemeSwitch />
+          </Stack>
+        </Stack>
+      </Drawer>
     </>
   );
 }

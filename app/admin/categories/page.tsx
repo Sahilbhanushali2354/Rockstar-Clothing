@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
   collection,
@@ -12,12 +12,42 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { FiEdit2, FiImage, FiPackage, FiPlus, FiTrash2 } from "react-icons/fi";
+import {
+  Alert,
+  Box,
+  Button,
+  ButtonBase,
+  Card,
+  Chip,
+  CircularProgress,
+  FormHelperText,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import {
+  Add,
+  DeleteOutlined,
+  EditOutlined,
+  ImageOutlined,
+  Inventory2Outlined,
+} from "@mui/icons-material";
 
 import { FStore } from "@/firebase/firebase.config";
-import { EmptyState, Field, Modal, PageHeader, Skeleton, Toggle } from "@/app/components/ui";
+import {
+  EmptyState,
+  Modal,
+  PageHeader,
+  Skeleton,
+  Toggle,
+} from "@/app/components/ui";
 import { PRODUCTS, toSlug } from "@/app/lib/products";
-import { deleteFromCloudinary, imageUrl, uploadToCloudinary } from "@/app/lib/cloudinary";
+import {
+  deleteFromCloudinary,
+  imageUrl,
+  uploadToCloudinary,
+} from "@/app/lib/cloudinary";
 import { revalidateStore } from "@/app/lib/adminApi";
 
 type Category = {
@@ -31,15 +61,26 @@ type Category = {
   order: number;
 };
 
-type FormValues = Pick<Category, "name" | "slug" | "subtitle" | "active" | "order">;
+type FormValues = Pick<
+  Category,
+  "name" | "slug" | "subtitle" | "active" | "order"
+>;
 type FormErrors = Partial<Record<keyof FormValues, string>>;
 
-const EMPTY: FormValues = { name: "", slug: "", subtitle: "", active: true, order: 1 };
+const EMPTY: FormValues = {
+  name: "",
+  slug: "",
+  subtitle: "",
+  active: true,
+  order: 1,
+};
 const MAX_IMAGE_MB = 5;
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  const [productCounts, setProductCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,8 +93,6 @@ export default function CategoriesPage() {
 
   const [deleting, setDeleting] = useState<Category | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
-
-  const fileInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const unsubCategories = onSnapshot(
@@ -86,14 +125,17 @@ export default function CategoriesPage() {
     );
 
     // Product counts per category (for badges + delete warning).
-    const unsubProducts = onSnapshot(collection(FStore, PRODUCTS), (snapshot) => {
-      const counts: Record<string, number> = {};
-      snapshot.docs.forEach((productDoc) => {
-        const slug = toSlug(String(productDoc.data().category ?? ""));
-        counts[slug] = (counts[slug] ?? 0) + 1;
-      });
-      setProductCounts(counts);
-    });
+    const unsubProducts = onSnapshot(
+      collection(FStore, PRODUCTS),
+      (snapshot) => {
+        const counts: Record<string, number> = {};
+        snapshot.docs.forEach((productDoc) => {
+          const slug = toSlug(String(productDoc.data().category ?? ""));
+          counts[slug] = (counts[slug] ?? 0) + 1;
+        });
+        setProductCounts(counts);
+      },
+    );
 
     return () => {
       unsubCategories();
@@ -109,7 +151,8 @@ export default function CategoriesPage() {
   }, [imagePreview]);
 
   const nextOrder = useMemo(
-    () => (categories.length ? Math.max(...categories.map((c) => c.order)) + 1 : 1),
+    () =>
+      categories.length ? Math.max(...categories.map((c) => c.order)) + 1 : 1,
     [categories],
   );
 
@@ -134,7 +177,14 @@ export default function CategoriesPage() {
     });
     setErrors({});
     setImageFile(null);
-    setImagePreview(category.imageUrl ? imageUrl({ url: category.imageUrl, publicId: category.imagePath }, 600) : "");
+    setImagePreview(
+      category.imageUrl
+        ? imageUrl(
+            { url: category.imageUrl, publicId: category.imagePath },
+            600,
+          )
+        : "",
+    );
     setDialogOpen(true);
   };
 
@@ -149,7 +199,11 @@ export default function CategoriesPage() {
       if (key === "name" && !editing) next.slug = toSlug(String(value));
       return next;
     });
-    setErrors((current) => ({ ...current, [key]: undefined, ...(key === "name" ? { slug: undefined } : {}) }));
+    setErrors((current) => ({
+      ...current,
+      [key]: undefined,
+      ...(key === "name" ? { slug: undefined } : {}),
+    }));
   };
 
   const handleImage = (event: ChangeEvent<HTMLInputElement>) => {
@@ -176,9 +230,13 @@ export default function CategoriesPage() {
     if (!values.slug) next.slug = "Slug is required.";
     else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug))
       next.slug = "Lowercase letters, numbers and hyphens only.";
-    else if (!editing && categories.some((category) => category.slug === values.slug))
+    else if (
+      !editing &&
+      categories.some((category) => category.slug === values.slug)
+    )
       next.slug = "A category with this slug already exists.";
-    if (!Number.isFinite(values.order) || values.order < 1) next.order = "Use 1 or higher.";
+    if (!Number.isFinite(values.order) || values.order < 1)
+      next.order = "Use 1 or higher.";
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -189,11 +247,16 @@ export default function CategoriesPage() {
     setSaving(true);
 
     try {
-      let image = editing ? { url: editing.imageUrl, publicId: editing.imagePath } : { url: "", publicId: "" };
+      let image = editing
+        ? { url: editing.imageUrl, publicId: editing.imagePath }
+        : { url: "", publicId: "" };
       const oldPublicId = editing?.imagePath ?? "";
 
       if (imageFile) {
-        image = await uploadToCloudinary(imageFile, `categories/${values.slug}`);
+        image = await uploadToCloudinary(
+          imageFile,
+          `categories/${values.slug}`,
+        );
       }
 
       const payload = {
@@ -224,7 +287,9 @@ export default function CategoriesPage() {
       setDialogOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : "Couldn't save category.");
+      toast.error(
+        error instanceof Error ? error.message : "Couldn't save category.",
+      );
     } finally {
       setSaving(false);
     }
@@ -232,7 +297,10 @@ export default function CategoriesPage() {
 
   const toggleActive = async (category: Category, active: boolean) => {
     try {
-      await updateDoc(doc(FStore, "categories", category.id), { active, updatedAt: serverTimestamp() });
+      await updateDoc(doc(FStore, "categories", category.id), {
+        active,
+        updatedAt: serverTimestamp(),
+      });
       toast.success(`${category.name} ${active ? "is live" : "hidden"}`);
       void revalidateStore({ categories: true });
     } catch (error) {
@@ -258,7 +326,31 @@ export default function CategoriesPage() {
     }
   };
 
-  const deletingCount = deleting ? productCounts[deleting.slug] ?? 0 : 0;
+  const deletingCount = deleting ? (productCounts[deleting.slug] ?? 0) : 0;
+
+  const newButton = (
+    <Button variant="contained" startIcon={<Add />} onClick={openAdd}>
+      New category
+    </Button>
+  );
+
+  const grid = {
+    display: "grid",
+    gap: 2,
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(2, 1fr)",
+      lg: "repeat(3, 1fr)",
+    },
+  } as const;
+
+  const badge = {
+    height: 22,
+    borderRadius: 1,
+    border: "1.5px solid var(--dc-edge)",
+    bgcolor: "var(--dc-surface)",
+    fontSize: 11,
+  } as const;
 
   return (
     <>
@@ -266,96 +358,182 @@ export default function CategoriesPage() {
         eyebrow="Catalog"
         title="Categories"
         description="Collections shown on the home page and in the store menu. Lower order shows first."
-        actions={
-          <button type="button" onClick={openAdd} className="btn-brutal btn-primary btn-sm">
-            <FiPlus /> New category
-          </button>
-        }
+        actions={newButton}
       />
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Box sx={grid}>
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-64" />
           ))}
-        </div>
+        </Box>
       ) : categories.length === 0 ? (
         <EmptyState
           title="No categories yet"
           description="Create collections like Co-ord Sets, Graphic Tees or Oversized before adding products."
-          action={
-            <button type="button" onClick={openAdd} className="btn-brutal btn-primary btn-sm">
-              <FiPlus /> New category
-            </button>
-          }
+          action={newButton}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Box sx={grid}>
           {categories.map((category) => {
             const count = productCounts[category.slug] ?? 0;
 
             return (
-              <article key={category.id} className="dc-card flex flex-col overflow-hidden">
-                <div className="relative aspect-[16/10] bg-surface-2">
+              <Card
+                component="article"
+                key={category.id}
+                sx={{ display: "flex", flexDirection: "column" }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    aspectRatio: "16 / 10",
+                    bgcolor: "var(--dc-surface-2)",
+                  }}
+                >
                   {category.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={imageUrl({ url: category.imageUrl, publicId: category.imagePath }, 600)}
+                    <Box
+                      component="img"
+                      src={imageUrl(
+                        {
+                          url: category.imageUrl,
+                          publicId: category.imagePath,
+                        },
+                        600,
+                      )}
                       alt=""
                       loading="lazy"
-                      className={`h-full w-full object-cover ${category.active ? "" : "opacity-50 grayscale"}`}
+                      sx={{
+                        display: "block",
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        ...(!category.active && {
+                          opacity: 0.5,
+                          filter: "grayscale(1)",
+                        }),
+                      }}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-muted">
-                      <FiImage className="text-2xl" />
-                    </div>
+                    <Stack
+                      sx={{
+                        height: "100%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "text.secondary",
+                      }}
+                    >
+                      <ImageOutlined sx={{ fontSize: 28 }} />
+                    </Stack>
                   )}
-                  <div className="absolute left-2 top-2 flex gap-1.5">
-                    <span className="dc-badge">#{category.order}</span>
-                    {!category.active && <span className="dc-badge dc-badge-muted bg-surface">Hidden</span>}
-                  </div>
-                </div>
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    sx={{ position: "absolute", left: 8, top: 8 }}
+                  >
+                    <Chip
+                      size="small"
+                      label={`#${category.order}`}
+                      sx={badge}
+                    />
+                    {!category.active && (
+                      <Chip
+                        size="small"
+                        label="Hidden"
+                        sx={{
+                          ...badge,
+                          borderColor: "var(--dc-line)",
+                          color: "text.secondary",
+                        }}
+                      />
+                    )}
+                  </Stack>
+                </Box>
 
-                <div className="flex flex-1 flex-col p-4">
-                  <div className="mb-3 min-w-0">
-                    <h2 className="truncate font-display text-lg font-bold">{category.name}</h2>
-                    <p className="truncate text-xs text-muted">/{category.slug}</p>
-                    {category.subtitle && <p className="mt-1 line-clamp-2 text-sm text-muted">{category.subtitle}</p>}
-                  </div>
+                <Stack sx={{ flex: 1, p: 2 }}>
+                  <Box sx={{ mb: 1.5, minWidth: 0 }}>
+                    <Typography
+                      variant="h6"
+                      component="h2"
+                      noWrap
+                      sx={{ fontSize: 18 }}
+                    >
+                      {category.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      noWrap
+                      sx={{ display: "block" }}
+                    >
+                      /{category.slug}
+                    </Typography>
+                    {category.subtitle && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          mt: 0.5,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {category.subtitle}
+                      </Typography>
+                    )}
+                  </Box>
 
-                  <div className="mt-auto space-y-3">
+                  <Stack spacing={1.5} sx={{ mt: "auto" }}>
                     <Toggle
                       checked={category.active}
                       onChange={(active) => toggleActive(category, active)}
                       label="Visible in store"
                     />
-                    <div className="flex gap-2">
-                      <Link href={`/admin/products?category=${category.slug}`} className="btn flex-1">
-                        <FiPackage /> {count} {count === 1 ? "product" : "products"}
-                      </Link>
-                      <button
-                        type="button"
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        component={Link}
+                        href={`/admin/products?category=${category.slug}`}
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Inventory2Outlined />}
+                        sx={{
+                          flex: 1,
+                          textTransform: "none",
+                          letterSpacing: 0,
+                        }}
+                      >
+                        {count} {count === 1 ? "product" : "products"}
+                      </Button>
+                      <IconButton
                         onClick={() => openEdit(category)}
-                        className="btn"
                         aria-label={`Edit ${category.name}`}
+                        sx={{
+                          border: "1.5px solid var(--dc-line)",
+                          "&:hover": { borderColor: "var(--dc-edge)" },
+                        }}
                       >
-                        <FiEdit2 />
-                      </button>
-                      <button
-                        type="button"
+                        <EditOutlined fontSize="small" />
+                      </IconButton>
+                      <IconButton
                         onClick={() => setDeleting(category)}
-                        className="btn btn-danger-soft"
                         aria-label={`Delete ${category.name}`}
+                        sx={{
+                          color: "error.main",
+                          border: "1.5px solid var(--dc-line)",
+                          "&:hover": { borderColor: "error.main" },
+                        }}
                       >
-                        <FiTrash2 />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </article>
+                        <DeleteOutlined fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </Stack>
+                </Stack>
+              </Card>
             );
           })}
-        </div>
+        </Box>
       )}
 
       {/* Add / edit */}
@@ -365,87 +543,129 @@ export default function CategoriesPage() {
         title={editing ? `Edit ${editing.name}` : "New category"}
         footer={
           <>
-            <button type="button" onClick={closeDialog} disabled={saving} className="btn">
+            <Button variant="outlined" onClick={closeDialog} disabled={saving}>
               Cancel
-            </button>
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-brutal btn-primary btn-sm">
-              {saving ? "Saving…" : editing ? "Save changes" : "Create category"}
-            </button>
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving}
+              startIcon={saving ? <CircularProgress size={16} /> : undefined}
+            >
+              {saving
+                ? "Saving…"
+                : editing
+                  ? "Save changes"
+                  : "Create category"}
+            </Button>
           </>
         }
       >
-        <div className="space-y-4">
-          <div>
-            <span className="dc-label">Cover image</span>
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              className="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-line bg-surface-2 text-muted transition-colors hover:border-current"
+        <Stack spacing={2.5}>
+          <Box>
+            <Typography variant="body2" sx={{ mb: 0.75, fontWeight: 700 }}>
+              Cover image
+            </Typography>
+            <ButtonBase
+              component="label"
+              sx={{
+                position: "relative",
+                display: "flex",
+                aspectRatio: "16 / 9",
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                borderRadius: 2,
+                border: "2px dashed var(--dc-line)",
+                bgcolor: "var(--dc-surface-2)",
+                color: "text.secondary",
+                transition: "border-color 150ms",
+                "&:hover": { borderColor: "var(--dc-edge)" },
+              }}
             >
               {imagePreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={imagePreview} alt="" className="h-full w-full object-cover" />
+                <Box
+                  component="img"
+                  src={imagePreview}
+                  alt=""
+                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
               ) : (
-                <span className="flex flex-col items-center gap-1 text-sm font-bold">
-                  <FiImage className="text-2xl" /> Upload image
-                </span>
+                <Stack
+                  spacing={0.5}
+                  sx={{ alignItems: "center", fontSize: 14, fontWeight: 700 }}
+                >
+                  <ImageOutlined sx={{ fontSize: 28 }} /> Upload image
+                </Stack>
               )}
               {imagePreview && (
-                <span className="dc-badge absolute bottom-2 right-2">Change</span>
+                <Chip
+                  size="small"
+                  label="Change"
+                  sx={{ ...badge, position: "absolute", bottom: 8, right: 8 }}
+                />
               )}
-            </button>
-            <p className="dc-help">JPG, PNG or WebP, up to {MAX_IMAGE_MB}MB. Landscape works best.</p>
-            <input ref={fileInput} type="file" accept="image/*" onChange={handleImage} className="hidden" />
-          </div>
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImage}
+              />
+            </ButtonBase>
+            <FormHelperText sx={{ mx: 0 }}>
+              JPG, PNG or WebP, up to {MAX_IMAGE_MB}MB. Landscape works best.
+            </FormHelperText>
+          </Box>
 
-          <Field label="Name" htmlFor="cat-name" error={errors.name}>
-            <input
-              id="cat-name"
-              value={values.name}
-              onChange={(event) => update("name", event.target.value)}
-              placeholder="e.g. Co-ord Sets"
-              aria-invalid={Boolean(errors.name)}
-              className="dc-input"
-            />
-          </Field>
+          <TextField
+            id="cat-name"
+            label="Name"
+            value={values.name}
+            onChange={(event) => update("name", event.target.value)}
+            placeholder="e.g. Co-ord Sets"
+            error={Boolean(errors.name)}
+            helperText={errors.name}
+            fullWidth
+          />
 
-          <Field
+          <TextField
+            id="cat-slug"
             label="URL slug"
-            htmlFor="cat-slug"
-            error={errors.slug}
-            help={editing ? "Slug can't change after creation (it's in product links)." : `Store link: /category/${values.slug || "…"}`}
-          >
-            <input
-              id="cat-slug"
-              value={values.slug}
-              onChange={(event) => update("slug", toSlug(event.target.value))}
-              disabled={Boolean(editing)}
-              aria-invalid={Boolean(errors.slug)}
-              className="dc-input disabled:opacity-60"
-            />
-          </Field>
+            value={values.slug}
+            onChange={(event) => update("slug", toSlug(event.target.value))}
+            disabled={Boolean(editing)}
+            error={Boolean(errors.slug)}
+            helperText={
+              errors.slug ||
+              (editing
+                ? "Slug can't change after creation (it's in product links)."
+                : `Store link: /category/${values.slug || "…"}`)
+            }
+            fullWidth
+          />
 
-          <Field label="Subtitle" htmlFor="cat-subtitle" optional help="Short line shown under the name on the home page.">
-            <input
-              id="cat-subtitle"
-              value={values.subtitle}
-              onChange={(event) => update("subtitle", event.target.value)}
-              placeholder="e.g. Matching sets, zero effort"
-              className="dc-input"
-            />
-          </Field>
+          <TextField
+            id="cat-subtitle"
+            label="Subtitle (optional)"
+            value={values.subtitle}
+            onChange={(event) => update("subtitle", event.target.value)}
+            placeholder="e.g. Matching sets, zero effort"
+            helperText="Short line shown under the name on the home page."
+            fullWidth
+          />
 
-          <Field label="Display order" htmlFor="cat-order" error={errors.order} help="Lower numbers show first.">
-            <input
-              id="cat-order"
-              type="number"
-              min={1}
-              value={values.order}
-              onChange={(event) => update("order", Number(event.target.value))}
-              aria-invalid={Boolean(errors.order)}
-              className="dc-input w-32"
-            />
-          </Field>
+          <TextField
+            id="cat-order"
+            label="Display order"
+            type="number"
+            value={values.order}
+            onChange={(event) => update("order", Number(event.target.value))}
+            error={Boolean(errors.order)}
+            helperText={errors.order || "Lower numbers show first."}
+            slotProps={{ htmlInput: { min: 1 } }}
+            sx={{ width: 160 }}
+          />
 
           <Toggle
             checked={values.active}
@@ -453,7 +673,7 @@ export default function CategoriesPage() {
             label="Visible in store"
             description="Hidden categories don't show on the home page."
           />
-        </div>
+        </Stack>
       </Modal>
 
       {/* Delete confirm */}
@@ -463,23 +683,36 @@ export default function CategoriesPage() {
         title="Delete category?"
         footer={
           <>
-            <button type="button" onClick={() => setDeleting(null)} disabled={deleteBusy} className="btn">
+            <Button
+              variant="outlined"
+              onClick={() => setDeleting(null)}
+              disabled={deleteBusy}
+            >
               Cancel
-            </button>
-            <button type="button" onClick={handleDelete} disabled={deleteBusy} className="btn-brutal btn-danger btn-sm">
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDelete}
+              disabled={deleteBusy}
+              sx={{ color: "#fff" }}
+            >
               {deleteBusy ? "Deleting…" : "Delete"}
-            </button>
+            </Button>
           </>
         }
       >
-        <p className="text-sm">
-          <strong>{deleting?.name}</strong> will be removed from the store.
-        </p>
+        <Typography variant="body2">
+          <Box component="strong">{deleting?.name}</Box> will be removed from
+          the store.
+        </Typography>
         {deletingCount > 0 && (
-          <p className="mt-3 rounded-lg p-3 text-sm font-semibold" style={{ background: "var(--dc-surface-2)" }}>
-            ⚠️ {deletingCount} {deletingCount === 1 ? "product is" : "products are"} still in this category.
-            They won&apos;t be deleted, but their category page will disappear. Move or delete them first.
-          </p>
+          <Alert severity="warning" sx={{ mt: 1.5, fontWeight: 600 }}>
+            {deletingCount}{" "}
+            {deletingCount === 1 ? "product is" : "products are"} still in this
+            category. They won&apos;t be deleted, but their category page will
+            disappear. Move or delete them first.
+          </Alert>
         )}
       </Modal>
     </>

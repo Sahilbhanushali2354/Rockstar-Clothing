@@ -9,32 +9,58 @@
  * The wordmark is live text so it stays crisp and follows the theme colour.
  */
 
+import { Box, type SxProps, type Theme } from "@mui/material";
+
 type Size = "sm" | "md" | "lg";
 type Variant = "full" | "mark" | "wordmark";
 
-const TEXT: Record<Size, string> = {
-  sm: "text-base",
-  md: "text-lg md:text-xl",
-  lg: "text-2xl md:text-3xl",
+const TEXT: Record<Size, SxProps<Theme>> = {
+  sm: { fontSize: 16 },
+  md: { fontSize: { xs: 18, md: 20 } },
+  lg: { fontSize: { xs: 24, md: 30 } },
 };
 
-const MARK: Record<Size, string> = {
-  sm: "h-7 w-7 rounded-md",
-  md: "h-8 w-8 rounded-lg md:h-9 md:w-9",
-  lg: "h-12 w-12 rounded-xl md:h-14 md:w-14",
+const MARK: Record<
+  Size,
+  { size: number | Record<string, number>; radius: number }
+> = {
+  sm: { size: 28, radius: 6 },
+  md: { size: { xs: 32, md: 36 }, radius: 8 },
+  lg: { size: { xs: 48, md: 56 }, radius: 12 },
 };
 
-export function BrandMark({ size = "md", className = "" }: { size?: Size; className?: string }) {
+export function BrandMark({
+  size = "md",
+  className = "",
+  sx,
+}: {
+  size?: Size;
+  className?: string;
+  sx?: SxProps<Theme>;
+}) {
+  const mark = MARK[size];
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Box
+      component="img"
       src="/brand/dc-monogram-256.webp"
       alt=""
       aria-hidden
       width={256}
       height={256}
       decoding="async"
-      className={`shrink-0 border-2 border-edge object-cover ${MARK[size]} ${className}`}
+      className={className}
+      sx={[
+        {
+          flexShrink: 0,
+          width: mark.size,
+          height: mark.size,
+          borderRadius: `${mark.radius}px`,
+          border: "2px solid var(--dc-edge)",
+          objectFit: "cover",
+        },
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
     />
   );
 }
@@ -50,33 +76,61 @@ export default function BrandLogo({
 }) {
   if (variant === "mark") {
     return (
-      <span className={`inline-flex ${className}`} role="img" aria-label="DOPAMINE CLUB">
+      <Box
+        component="span"
+        className={className}
+        role="img"
+        aria-label="DOPAMINE CLUB"
+        sx={{ display: "inline-flex" }}
+      >
         <BrandMark size={size} />
-      </span>
+      </Box>
     );
   }
 
   return (
-    <span
-      className={`inline-flex select-none items-center gap-2 whitespace-nowrap font-black uppercase leading-none tracking-tight ${TEXT[size]} ${className}`}
+    <Box
+      component="span"
+      className={className}
       aria-label="DOPAMINE CLUB"
       role="img"
+      sx={[
+        {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 1,
+          userSelect: "none",
+          whiteSpace: "nowrap",
+          fontWeight: 900,
+          textTransform: "uppercase",
+          lineHeight: 1,
+          letterSpacing: "-0.025em",
+        },
+        TEXT[size] as object,
+      ]}
     >
       {variant === "full" && <BrandMark size={size} />}
-      <span className="inline-flex items-center gap-1.5" aria-hidden>
-        <span>DOPAMINE</span>
-        <span
-          className="rounded-[4px] px-1.5 py-0.5"
-          style={{
-            background: "var(--dc-acid)",
+      <Box
+        component="span"
+        aria-hidden
+        sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}
+      >
+        <Box component="span">DOPAMINE</Box>
+        <Box
+          component="span"
+          sx={{
+            borderRadius: "4px",
+            px: 0.75,
+            py: 0.25,
+            bgcolor: "var(--dc-acid)",
             color: "var(--dc-ink)",
             border: "2px solid var(--dc-ink)",
             boxShadow: "2px 2px 0 var(--dc-ink)",
           }}
         >
           CLUB
-        </span>
-      </span>
-    </span>
+        </Box>
+      </Box>
+    </Box>
   );
 }

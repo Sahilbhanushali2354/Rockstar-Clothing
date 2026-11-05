@@ -1,81 +1,185 @@
+"use client";
+
 import Link from "next/link";
+import { Box, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
 
 import BrandLogo from "../components/BrandLogo";
 import { ThemeSwitch } from "../components/ui";
 
 const TAGS = ["Streetwear", "Co-ord sets", "Graphic tees", "Viral drops"];
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div
-      className="grid min-h-screen lg:grid-cols-2"
-      style={{ background: "var(--dc-bg)", color: "var(--dc-text)" }}
+    <Box
+      sx={{
+        display: "grid",
+        minHeight: "100vh",
+        gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+        bgcolor: "var(--dc-bg)",
+        color: "var(--dc-text)",
+      }}
     >
       {/* Brand panel (desktop) */}
-      <aside
-        className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12"
-        style={{ background: "var(--dc-ink)", color: "var(--dc-paper)" }}
+      <Box
+        component="aside"
+        sx={{
+          position: "relative",
+          overflow: "hidden",
+          display: { xs: "none", lg: "flex" },
+          flexDirection: "column",
+          justifyContent: "space-between",
+          p: 6,
+          bgcolor: "var(--dc-ink)",
+          color: "var(--dc-paper)",
+        }}
       >
-        <Link href="/" aria-label="DOPAMINE CLUB home" className="relative z-10 w-fit">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <MuiLink
+          component={Link}
+          href="/"
+          aria-label="DOPAMINE CLUB home"
+          sx={{ position: "relative", zIndex: 1, width: "fit-content" }}
+        >
+          <Box
+            component="img"
             src="/brand/dopamine-club-logo-800.webp"
             alt="DOPAMINE CLUB"
             width={800}
             height={800}
-            className="h-32 w-32 rounded-2xl border-2 object-cover xl:h-36 xl:w-36"
-            style={{ borderColor: "var(--dc-paper)", boxShadow: "6px 6px 0 var(--dc-acid)" }}
+            sx={{
+              display: "block",
+              width: { lg: 128, xl: 144 },
+              height: { lg: 128, xl: 144 },
+              borderRadius: 4,
+              border: "2px solid var(--dc-paper)",
+              objectFit: "cover",
+              boxShadow: "6px 6px 0 var(--dc-acid)",
+            }}
           />
-        </Link>
+        </MuiLink>
 
-        <div>
-          <p className="font-display text-6xl font-bold leading-[0.95] tracking-tight xl:text-7xl">
+        <Box sx={{ position: "relative", zIndex: 1 }}>
+          <Typography
+            variant="h1"
+            component="p"
+            sx={{ fontSize: { lg: 60, xl: 72 }, lineHeight: 0.95 }}
+          >
             Drip that
             <br />
             hits{" "}
-            <span
-              className="inline-block -rotate-2 rounded-md px-3"
-              style={{ background: "var(--dc-acid)", color: "var(--dc-ink)", border: "3px solid var(--dc-paper)" }}
+            <Box
+              component="span"
+              sx={{
+                display: "inline-block",
+                transform: "rotate(-2deg)",
+                borderRadius: 1.5,
+                px: 1.5,
+                bgcolor: "var(--dc-acid)",
+                color: "var(--dc-ink)",
+                border: "3px solid var(--dc-paper)",
+              }}
             >
               different.
-            </span>
-          </p>
-          <div className="mt-8 flex flex-wrap gap-2">
+            </Box>
+          </Typography>
+          <Stack
+            direction="row"
+            useFlexGap
+            spacing={1}
+            sx={{ mt: 4, flexWrap: "wrap" }}
+          >
             {TAGS.map((tag, index) => (
-              <span
+              <Chip
                 key={tag}
-                className="rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide"
-                style={{
-                  background: index % 2 === 0 ? "var(--dc-acid)" : "transparent",
+                label={tag}
+                size="small"
+                sx={{
+                  borderRadius: 999,
                   border: "2px solid var(--dc-acid)",
+                  bgcolor: index % 2 === 0 ? "var(--dc-acid)" : "transparent",
                   color: index % 2 === 0 ? "var(--dc-ink)" : "var(--dc-acid)",
                 }}
-              >
-                {tag}
-              </span>
+              />
             ))}
-          </div>
-        </div>
+          </Stack>
+        </Box>
 
-        <p className="text-sm opacity-60">Order on WhatsApp · Pay via UPI · Ships across India</p>
+        <Typography variant="body2" sx={{ opacity: 0.6 }}>
+          Order on WhatsApp · Pay via UPI · Ships across India
+        </Typography>
 
         {/* decorative blocks */}
-        <div aria-hidden className="pointer-events-none absolute -right-16 top-24 h-48 w-48 rotate-12 rounded-3xl" style={{ background: "var(--dc-acid)" }} />
-        <div aria-hidden className="pointer-events-none absolute -right-6 top-56 h-24 w-24 -rotate-6 rounded-2xl" style={{ border: "3px solid var(--dc-acid)" }} />
-      </aside>
+        <Box
+          aria-hidden
+          sx={{
+            pointerEvents: "none",
+            position: "absolute",
+            right: -64,
+            top: 96,
+            width: 192,
+            height: 192,
+            transform: "rotate(12deg)",
+            borderRadius: 6,
+            bgcolor: "var(--dc-acid)",
+          }}
+        />
+        <Box
+          aria-hidden
+          sx={{
+            pointerEvents: "none",
+            position: "absolute",
+            right: -24,
+            top: 224,
+            width: 96,
+            height: 96,
+            transform: "rotate(-6deg)",
+            borderRadius: 4,
+            border: "3px solid var(--dc-acid)",
+          }}
+        />
+      </Box>
 
       {/* Form side */}
-      <main className="flex min-h-screen flex-col px-4 py-5 sm:px-8">
-        <div className="flex items-center justify-between">
-          <Link href="/" aria-label="DOPAMINE CLUB home" className="lg:invisible">
+      <Box
+        component="main"
+        sx={{
+          display: "flex",
+          minHeight: "100vh",
+          flexDirection: "column",
+          px: { xs: 2, sm: 4 },
+          py: 2.5,
+        }}
+      >
+        <Stack
+          direction="row"
+          sx={{ alignItems: "center", justifyContent: "space-between" }}
+        >
+          <MuiLink
+            component={Link}
+            href="/"
+            aria-label="DOPAMINE CLUB home"
+            color="inherit"
+            underline="none"
+            sx={{ visibility: { lg: "hidden" } }}
+          >
             <BrandLogo size="sm" />
-          </Link>
+          </MuiLink>
           <ThemeSwitch />
-        </div>
-        <div className="flex flex-1 items-center justify-center py-8">
-          <div className="w-full max-w-md">{children}</div>
-        </div>
-      </main>
-    </div>
+        </Stack>
+        <Stack
+          sx={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            py: 4,
+          }}
+        >
+          <Box sx={{ width: "100%", maxWidth: 448 }}>{children}</Box>
+        </Stack>
+      </Box>
+    </Box>
   );
 }

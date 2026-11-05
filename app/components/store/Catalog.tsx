@@ -2,6 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  FormControlLabel,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 
 import StoreShell, { Container } from "./StoreShell";
 import SectionHeader from "./SectionHeader";
@@ -78,24 +89,53 @@ export default function Catalog({
   );
 
   const visible = useMemo(() => {
-    const list = inStockOnly ? products.filter((product) => !isSoldOut(product)) : [...products];
+    const list = inStockOnly
+      ? products.filter((product) => !isSoldOut(product))
+      : [...products];
     if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
     // "new" is already newest-first from getActiveProducts
     return list;
   }, [products, sort, inStockOnly]);
 
-  const title = slug ? category?.name ?? slugToLabel(slug) : "Shop";
-  const chip = (active: boolean) =>
-    `shrink-0 rounded-full border-2 px-4 py-1.5 text-sm font-bold transition-colors ${
-      active ? "border-ink bg-acid text-ink" : "border-line hover:border-edge"
-    }`;
+  const title = slug ? (category?.name ?? slugToLabel(slug)) : "Shop";
+
+  const chipSx = (active: boolean) => ({
+    flexShrink: 0,
+    height: 36,
+    px: 0.5,
+    borderRadius: 999,
+    border: "2px solid",
+    fontSize: 14,
+    fontWeight: 700,
+    textTransform: "none",
+    letterSpacing: 0,
+    cursor: "pointer",
+    ...(active
+      ? {
+          borderColor: "var(--dc-ink)",
+          bgcolor: "var(--dc-acid)",
+          color: "var(--dc-ink)",
+          "&:hover": { bgcolor: "var(--dc-acid)" },
+        }
+      : {
+          borderColor: "var(--dc-line)",
+          bgcolor: "transparent",
+          "&:hover": { borderColor: "var(--dc-edge)", bgcolor: "transparent" },
+        }),
+  });
 
   return (
     <StoreShell container={false}>
       {/* Header band */}
-      <section className="border-b-2 border-edge bg-surface">
-        <Container className="pb-6 pt-10 sm:pt-14">
+      <Box
+        component="section"
+        sx={{
+          borderBottom: "2px solid var(--dc-edge)",
+          bgcolor: "var(--dc-surface)",
+        }}
+      >
+        <Container sx={{ pb: 3, pt: { xs: 5, sm: 7 } }}>
           <SectionHeader
             as="h1"
             eyebrow={slug ? "Collection" : "All products"}
@@ -110,67 +150,158 @@ export default function Catalog({
 
           {/* Category chips */}
           {categories.length > 0 && (
-            <nav aria-label="Collections" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-              <Link href="/shop" className={chip(!slug)} aria-current={!slug ? "page" : undefined}>
-                All
-              </Link>
+            <Stack
+              component="nav"
+              aria-label="Collections"
+              direction="row"
+              spacing={1}
+              useFlexGap
+              sx={{
+                mx: { xs: -2, sm: 0 },
+                px: { xs: 2, sm: 0 },
+                pb: 0.5,
+                overflowX: "auto",
+                flexWrap: { xs: "nowrap", sm: "wrap" },
+              }}
+            >
+              <Chip
+                component={Link}
+                href="/shop"
+                label="All"
+                clickable
+                aria-current={!slug ? "page" : undefined}
+                sx={chipSx(!slug)}
+              />
               {categories.map((item) => (
-                <Link
+                <Chip
                   key={item.id}
+                  component={Link}
                   href={`/category/${item.slug}`}
-                  className={chip(item.slug === slug)}
+                  label={item.name}
+                  clickable
                   aria-current={item.slug === slug ? "page" : undefined}
-                >
-                  {item.name}
-                </Link>
+                  sx={chipSx(item.slug === slug)}
+                />
               ))}
-            </nav>
+            </Stack>
           )}
         </Container>
-      </section>
+      </Box>
 
-      <Container className="py-6 sm:py-10">
+      <Container sx={{ py: { xs: 3, sm: 5 } }}>
         {/* Toolbar */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-bold text-muted" aria-live="polite">
-            {loading ? "Loading…" : `${visible.length} ${visible.length === 1 ? "piece" : "pieces"}`}
-          </p>
+        <Stack
+          direction="row"
+          useFlexGap
+          spacing={1.5}
+          sx={{
+            mb: 2.5,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 700 }}
+            aria-live="polite"
+          >
+            {loading
+              ? "Loading…"
+              : `${visible.length} ${visible.length === 1 ? "piece" : "pieces"}`}
+          </Typography>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-line px-3 py-1.5 text-sm font-bold">
-              <input
-                type="checkbox"
-                checked={inStockOnly}
-                onChange={(event) => setInStockOnly(event.target.checked)}
-                className="h-4 w-4 accent-[var(--dc-ink)]"
-              />
-              In stock
-            </label>
-            <div className="flex rounded-full border-2 border-edge p-0.5" role="group" aria-label="Sort">
+          <Stack
+            direction="row"
+            useFlexGap
+            spacing={1}
+            sx={{ flexWrap: "wrap", alignItems: "center" }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={inStockOnly}
+                  onChange={(event) => setInStockOnly(event.target.checked)}
+                  sx={{
+                    p: 0.5,
+                    color: "var(--dc-edge)",
+                    "&.Mui-checked": { color: "var(--dc-edge)" },
+                  }}
+                />
+              }
+              label="In stock"
+              sx={{
+                m: 0,
+                pl: 0.75,
+                pr: 1.5,
+                borderRadius: 999,
+                border: "2px solid var(--dc-line)",
+                "& .MuiFormControlLabel-label": {
+                  fontSize: 14,
+                  fontWeight: 700,
+                },
+              }}
+            />
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              value={sort}
+              onChange={(_, value: Sort | null) => value && setSort(value)}
+              aria-label="Sort"
+              sx={{
+                p: 0.25,
+                borderRadius: 999,
+                border: "2px solid var(--dc-edge)",
+                "& .MuiToggleButton-root": {
+                  border: 0,
+                  borderRadius: "999px !important",
+                  px: 1.5,
+                  py: 0.5,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  letterSpacing: "0.025em",
+                  color: "text.secondary",
+                  "&:hover": { color: "text.primary", bgcolor: "transparent" },
+                  "&.Mui-selected, &.Mui-selected:hover": {
+                    bgcolor: "var(--dc-text)",
+                    color: "var(--dc-bg)",
+                  },
+                },
+              }}
+            >
               {SORTS.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setSort(option.key)}
-                  aria-pressed={sort === option.key}
-                  className={`rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wide transition-colors ${
-                    sort === option.key ? "bg-fg text-bg" : "text-muted hover:text-fg"
-                  }`}
-                >
+                <ToggleButton key={option.key} value={option.key}>
                   {option.label}
-                </button>
+                </ToggleButton>
               ))}
-            </div>
-          </div>
-        </div>
+            </ToggleButtonGroup>
+          </Stack>
+        </Stack>
 
         {error ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-line px-6 py-16 text-center">
-            <p className="font-display text-2xl font-bold">Couldn&apos;t load products</p>
-            <button type="button" onClick={() => window.location.reload()} className="btn-brutal btn-primary btn-sm">
+          <Stack
+            spacing={1.5}
+            sx={{
+              alignItems: "center",
+              borderRadius: 3,
+              border: "2px dashed var(--dc-line)",
+              px: 3,
+              py: 8,
+              textAlign: "center",
+            }}
+          >
+            <Typography variant="h4" component="p" sx={{ fontSize: 24 }}>
+              Couldn&apos;t load products
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => window.location.reload()}
+            >
               Try again
-            </button>
-          </div>
+            </Button>
+          </Stack>
         ) : (
           <ProductGrid
             products={visible}
@@ -178,8 +309,16 @@ export default function Catalog({
             categoryNames={slug ? undefined : categoryNames}
             empty={
               inStockOnly && products.length > 0
-                ? { title: "All sold out", description: "Everything here is sold out right now. Restocks drop on Instagram first." }
-                : { title: "Dropping soon", description: "Nothing here yet — check back soon.", action: { label: "Shop all", href: "/shop" } }
+                ? {
+                    title: "All sold out",
+                    description:
+                      "Everything here is sold out right now. Restocks drop on Instagram first.",
+                  }
+                : {
+                    title: "Dropping soon",
+                    description: "Nothing here yet — check back soon.",
+                    action: { label: "Shop all", href: "/shop" },
+                  }
             }
           />
         )}

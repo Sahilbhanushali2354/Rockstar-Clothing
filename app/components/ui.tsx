@@ -1,12 +1,35 @@
 "use client";
 
 /*
- * Shared DOPAMINE CLUB UI primitives for admin + auth screens.
- * Styling lives in globals.css (.btn*, .dc-*) so it follows the theme tokens.
+ * Shared DOPAMINE CLUB UI primitives for admin + auth screens, built on MUI.
+ * Colours/shape come from app/theme/muiTheme.ts (driven by tokens.ts).
  */
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { FiMoon, FiSun, FiX } from "react-icons/fi";
+import { useId, type ReactNode } from "react";
+import {
+  Box,
+  Card,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  IconButton,
+  Skeleton as MuiSkeleton,
+  Stack,
+  Switch,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import {
+  Close,
+  DarkModeOutlined,
+  LightModeOutlined,
+} from "@mui/icons-material";
 
 import { useThemeMode } from "../providers/ThemeProvider";
 
@@ -29,20 +52,30 @@ export function Field({
   className?: string;
 }) {
   return (
-    <div className={className}>
-      <label htmlFor={htmlFor} className="dc-label">
+    <FormControl fullWidth error={Boolean(error)} className={className}>
+      <FormLabel
+        htmlFor={htmlFor}
+        sx={{ mb: 0.75, fontSize: 14, fontWeight: 700, color: "text.primary" }}
+      >
         {label}
-        {optional && <span className="ml-1 font-medium text-muted">(optional)</span>}
-      </label>
+        {optional && (
+          <Box
+            component="span"
+            sx={{ ml: 0.5, fontWeight: 500, color: "text.secondary" }}
+          >
+            (optional)
+          </Box>
+        )}
+      </FormLabel>
       {children}
       {error ? (
-        <p className="dc-error" role="alert">
+        <FormHelperText role="alert" sx={{ mx: 0, fontWeight: 600 }}>
           {error}
-        </p>
+        </FormHelperText>
       ) : help ? (
-        <p className="dc-help">{help}</p>
+        <FormHelperText sx={{ mx: 0 }}>{help}</FormHelperText>
       ) : null}
-    </div>
+    </FormControl>
   );
 }
 
@@ -63,38 +96,36 @@ export function Toggle({
   const id = useId();
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <label htmlFor={id} className="cursor-pointer">
-        <span className="block text-sm font-bold">{label}</span>
-        {description && <span className="block text-xs text-muted">{description}</span>}
-      </label>
-      <button
+    <Stack
+      direction="row"
+      spacing={2}
+      sx={{ alignItems: "center", justifyContent: "space-between" }}
+    >
+      <Box component="label" htmlFor={id} sx={{ cursor: "pointer" }}>
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {label}
+        </Typography>
+        {description && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block" }}
+          >
+            {description}
+          </Typography>
+        )}
+      </Box>
+      <Switch
         id={id}
-        type="button"
-        role="switch"
-        aria-checked={checked}
+        checked={checked}
         disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className="relative h-7 w-12 shrink-0 rounded-full border-2 transition-colors disabled:opacity-50"
-        style={{
-          borderColor: "var(--dc-edge)",
-          background: checked ? "var(--dc-acid)" : "var(--dc-surface-2)",
-        }}
-      >
-        <span
-          className="absolute top-0.5 h-5 w-5 rounded-full border-2 transition-[left]"
-          style={{
-            left: checked ? "calc(100% - 1.375rem)" : "0.125rem",
-            borderColor: "var(--dc-ink)",
-            background: checked ? "var(--dc-ink)" : "var(--dc-surface)",
-          }}
-        />
-      </button>
-    </div>
+        onChange={(_, value) => onChange(value)}
+      />
+    </Stack>
   );
 }
 
-/* ---------- Modal (Esc to close, focus trap-lite, scroll lock) ---------- */
+/* ---------- Modal: bottom sheet on mobile, dialog on desktop ---------- */
 export function Modal({
   open,
   onClose,
@@ -108,70 +139,86 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    panelRef.current?.querySelector<HTMLElement>("input, textarea, select, button")?.focus();
-
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  const theme = useTheme();
+  const mobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <div className="fixed inset-0 z-[1300] flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="dc-card-brutal relative flex max-h-[92vh] w-full flex-col rounded-b-none sm:max-w-lg sm:rounded-b-xl"
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      aria-label={title}
+      sx={
+        mobile
+          ? { "& .MuiDialog-container": { alignItems: "flex-end" } }
+          : undefined
+      }
+      slotProps={{
+        paper: {
+          sx: {
+            m: mobile ? 0 : 2,
+            width: mobile ? "100%" : undefined,
+            maxHeight: "92vh",
+            borderRadius: mobile ? "12px 12px 0 0" : 3,
+            border: "2px solid var(--dc-edge)",
+            boxShadow: "6px 6px 0 var(--dc-edge)",
+          },
+        },
+      }}
+    >
+      <DialogTitle
+        component="div"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid var(--dc-line)",
+          py: 2,
+        }}
       >
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="font-display text-lg font-bold">{title}</h2>
-          <button type="button" onClick={onClose} className="btn btn-ghost px-2" aria-label="Close">
-            <FiX />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-5 py-5">{children}</div>
-        {footer && (
-          <div
-            className="flex flex-wrap justify-end gap-3 border-t border-line px-5 py-4"
-            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
-          >
-            {footer}
-          </div>
-        )}
-      </div>
-    </div>
+        <Typography variant="h6" component="h2">
+          {title}
+        </Typography>
+        <IconButton onClick={onClose} aria-label="Close" edge="end">
+          <Close />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: "20px !important" }}>{children}</DialogContent>
+      {footer && (
+        <DialogActions
+          sx={{
+            flexWrap: "wrap",
+            gap: 1.5,
+            borderTop: "1px solid var(--dc-line)",
+            px: 2.5,
+            pt: 2,
+            pb: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+            "& > :not(style) ~ :not(style)": { ml: 0 },
+          }}
+        >
+          {footer}
+        </DialogActions>
+      )}
+    </Dialog>
   );
 }
 
-/* ---------- Theme switch (non-MUI, for admin/auth) ---------- */
+/* ---------- Theme switch ---------- */
 export function ThemeSwitch({ className = "" }: { className?: string }) {
   const { mode, toggleTheme } = useThemeMode();
   const isDark = mode === "dark";
 
   return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className={`btn btn-ghost px-2.5 ${className}`}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Light mode" : "Dark mode"}
-    >
-      {isDark ? <FiSun className="text-lg" /> : <FiMoon className="text-lg" />}
-    </button>
+    <Tooltip title={isDark ? "Light mode" : "Dark mode"}>
+      <IconButton
+        onClick={toggleTheme}
+        className={className}
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDark ? <LightModeOutlined /> : <DarkModeOutlined />}
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -188,18 +235,56 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 md:mb-8">
-      <div className="min-w-0">
+    <Stack
+      direction="row"
+      useFlexGap
+      spacing={2}
+      sx={{
+        mb: { xs: 3, md: 4 },
+        flexWrap: "wrap",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
         {eyebrow && (
-          <p className="mb-1 text-xs font-extrabold uppercase tracking-[0.18em] text-muted">
+          <Typography
+            variant="overline"
+            component="p"
+            color="text.secondary"
+            sx={{ fontSize: 12, mb: 0.5 }}
+          >
             {eyebrow}
-          </p>
+          </Typography>
         )}
-        <h1 className="font-display text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
-        {description && <p className="mt-1.5 max-w-2xl text-sm text-muted">{description}</p>}
-      </div>
-      {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
-    </div>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ fontSize: { xs: 30, md: 36 } }}
+        >
+          {title}
+        </Typography>
+        {description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.75, maxWidth: 672 }}
+          >
+            {description}
+          </Typography>
+        )}
+      </Box>
+      {actions && (
+        <Stack
+          direction="row"
+          useFlexGap
+          spacing={1.5}
+          sx={{ flexWrap: "wrap" }}
+        >
+          {actions}
+        </Stack>
+      )}
+    </Stack>
   );
 }
 
@@ -214,15 +299,44 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="dc-card flex flex-col items-center justify-center gap-3 border-dashed px-6 py-14 text-center">
-      <p className="font-display text-xl font-bold">{title}</p>
-      {description && <p className="max-w-sm text-sm text-muted">{description}</p>}
+    <Card
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 1.5,
+        px: 3,
+        py: 7,
+        textAlign: "center",
+        borderStyle: "dashed",
+      }}
+    >
+      <Typography variant="h5" component="p">
+        {title}
+      </Typography>
+      {description && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ maxWidth: 384 }}
+        >
+          {description}
+        </Typography>
+      )}
       {action}
-    </div>
+    </Card>
   );
 }
 
-/* ---------- Skeleton block ---------- */
+/* ---------- Skeleton block (size via className, e.g. "h-12 w-64") ---------- */
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-surface-2 ${className}`} />;
+  return (
+    <MuiSkeleton
+      variant="rounded"
+      animation="pulse"
+      className={className}
+      sx={{ borderRadius: 2 }}
+    />
+  );
 }

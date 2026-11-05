@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Box, Link as MuiLink, Typography } from "@mui/material";
 
 /*
  * Standard storefront section heading.
@@ -26,42 +29,98 @@ export default function SectionHeader({
   const centered = align === "center";
 
   return (
-    <div
-      className={`mb-6 flex flex-wrap gap-4 md:mb-10 ${
-        centered ? "flex-col items-center text-center" : "items-end justify-between"
-      }`}
+    <Box
+      sx={{
+        mb: { xs: 3, md: 5 },
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 2,
+        ...(centered
+          ? {
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+            }
+          : { alignItems: "flex-end", justifyContent: "space-between" }),
+      }}
     >
-      <div className={`min-w-0 ${centered ? "max-w-2xl" : "max-w-3xl"}`}>
+      <Box sx={{ minWidth: 0, maxWidth: centered ? 672 : 768 }}>
         {eyebrow && (
-          <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.2em] opacity-70">{eyebrow}</p>
+          <Typography
+            component="p"
+            sx={{
+              mb: 1,
+              fontSize: 12,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.2em",
+              opacity: 0.7,
+            }}
+          >
+            {eyebrow}
+          </Typography>
         )}
-        <Tag
-          className={`font-display font-bold tracking-tight ${
-            Tag === "h1" ? "text-5xl leading-[0.95] sm:text-6xl lg:text-7xl" : "text-4xl leading-none sm:text-5xl"
-          }`}
+        <Typography
+          variant={Tag === "h1" ? "h1" : "h2"}
+          component={Tag}
+          sx={
+            Tag === "h1"
+              ? { fontSize: { xs: 48, sm: 60, lg: 72 }, lineHeight: 0.95 }
+              : { fontSize: { xs: 36, sm: 48 }, lineHeight: 1 }
+          }
         >
           {title}
           {highlight && (
             <>
               {" "}
-              <span className="dc-highlight -rotate-1">{highlight}</span>
+              <Box
+                component="span"
+                className="dc-highlight"
+                sx={{ transform: "rotate(-1deg)" }}
+              >
+                {highlight}
+              </Box>
             </>
           )}
-        </Tag>
-        {description && <p className="mt-3 text-sm opacity-75 sm:text-base">{description}</p>}
-      </div>
+        </Typography>
+        {description && (
+          <Typography
+            sx={{ mt: 1.5, fontSize: { xs: 14, sm: 16 }, opacity: 0.75 }}
+          >
+            {description}
+          </Typography>
+        )}
+      </Box>
 
       {action && (
-        <Link
+        <MuiLink
+          component={Link}
           href={action.href}
-          className="group inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide underline-offset-4 hover:underline"
+          color="inherit"
+          underline="hover"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 1,
+            fontSize: 14,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.025em",
+            textUnderlineOffset: 4,
+            "&:hover .arrow": { transform: "translateX(4px)" },
+          }}
         >
           {action.label}
-          <span className="transition-transform group-hover:translate-x-1" aria-hidden>
+          <Box
+            component="span"
+            className="arrow"
+            aria-hidden
+            sx={{ transition: "transform 150ms" }}
+          >
             →
-          </span>
-        </Link>
+          </Box>
+        </MuiLink>
       )}
-    </div>
+    </Box>
   );
 }

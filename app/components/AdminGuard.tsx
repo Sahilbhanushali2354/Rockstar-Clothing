@@ -19,7 +19,11 @@ export const useAdminUser = () => useContext(AdminUserContext);
  * (firestore.rules + /api/cloudinary/* checks); this keeps non-admins
  * out of the UI.
  */
-export default function AdminGuard({ children }: { children: React.ReactNode }) {
+export default function AdminGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
@@ -64,5 +68,9 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
   if (status !== "allowed") return <Loader label="Checking access" />;
 
-  return <AdminUserContext.Provider value={user}>{children}</AdminUserContext.Provider>;
+  return (
+    <AdminUserContext.Provider value={user}>
+      {children}
+    </AdminUserContext.Provider>
+  );
 }

@@ -1,25 +1,69 @@
+"use client";
+
 import Link from "next/link";
+import { Box, Button, Stack, Typography } from "@mui/material";
 
 import StoreShell from "./components/store/StoreShell";
 
 export default function NotFound() {
   return (
     <StoreShell>
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-16 text-center">
-        <p className="font-display text-8xl font-bold leading-none tracking-tight sm:text-9xl">
-          4<span className="dc-highlight mx-1 -rotate-3">0</span>4
-        </p>
-        <p className="font-display text-3xl font-bold">This fit sold out — or never existed.</p>
-        <p className="max-w-sm text-muted">The page you&apos;re looking for isn&apos;t here. The drop is, though.</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/shop" className="btn-brutal btn-primary">
+      <Stack
+        spacing={2.5}
+        sx={{
+          minHeight: "60vh",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 8,
+          textAlign: "center",
+        }}
+      >
+        <Typography
+          variant="h1"
+          component="p"
+          sx={{ fontSize: { xs: 96, sm: 128 }, lineHeight: 1 }}
+        >
+          4
+          <Box
+            component="span"
+            className="dc-highlight"
+            sx={{ mx: 0.5, transform: "rotate(-3deg)" }}
+          >
+            0
+          </Box>
+          4
+        </Typography>
+        <Typography variant="h2" component="p" sx={{ fontSize: 30 }}>
+          This fit sold out — or never existed.
+        </Typography>
+        <Typography color="text.secondary" sx={{ maxWidth: 384 }}>
+          The page you&apos;re looking for isn&apos;t here. The drop is, though.
+        </Typography>
+        <Stack
+          direction="row"
+          useFlexGap
+          spacing={1.5}
+          sx={{ flexWrap: "wrap", justifyContent: "center" }}
+        >
+          <Button
+            component={Link}
+            href="/shop"
+            variant="contained"
+            size="large"
+          >
             Shop the drop →
-          </Link>
-          <Link href="/" className="btn-brutal btn-ink">
+          </Button>
+          <Button
+            component={Link}
+            href="/"
+            variant="contained"
+            color="secondary"
+            size="large"
+          >
             Home
-          </Link>
-        </div>
-      </div>
+          </Button>
+        </Stack>
+      </Stack>
     </StoreShell>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { Paper, Typography } from "@mui/material";
+
 import WhatsAppButton from "./WhatsAppButton";
 import type { WhatsAppOrderItem } from "@/app/lib/whatsapp";
 
@@ -15,7 +17,7 @@ interface StickyWhatsAppBarProps {
 
 /*
  * Mobile/tablet-only bottom action bar. Pair it with a spacer
- * (`<div className="sticky-cta-spacer" />`) at the end of the page so
+ * (`<Box className="sticky-cta-spacer" />`) at the end of the page so
  * content isn't hidden under it — no layout shift since the bar is
  * fixed and its height is constant.
  */
@@ -28,11 +30,36 @@ export default function StickyWhatsAppBar({
   disabled,
 }: StickyWhatsAppBarProps) {
   return (
-    <div className="sticky-cta md:hidden">
+    <Paper
+      square
+      elevation={0}
+      sx={{
+        display: { xs: "flex", md: "none" },
+        position: "fixed",
+        insetInline: 0,
+        bottom: 0,
+        zIndex: 1200,
+        alignItems: "center",
+        gap: 1.5,
+        px: 2,
+        pt: 1.5,
+        pb: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+        bgcolor: "var(--dc-surface)",
+        borderTop: "2px solid var(--dc-edge)",
+        "& .MuiButton-root": {
+          borderColor: "var(--dc-ink)",
+          boxShadow: "4px 4px 0 var(--dc-ink)",
+        },
+      }}
+    >
       {summary && (
-        <span className="min-w-0 flex-1 truncate text-sm font-extrabold">
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{ minWidth: 0, flex: 1, fontWeight: 800 }}
+        >
           {summary}
-        </span>
+        </Typography>
       )}
       <WhatsAppButton
         items={items}
@@ -42,6 +69,6 @@ export default function StickyWhatsAppBar({
         disabled={disabled}
         className={summary ? "shrink-0" : "w-full"}
       />
-    </div>
+    </Paper>
   );
 }

@@ -12,7 +12,28 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { FiEdit2, FiEye, FiEyeOff, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
+import {
+  Box,
+  Button,
+  Card,
+  Chip,
+  IconButton,
+  InputAdornment,
+  Link as MuiLink,
+  MenuItem,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  Add,
+  DeleteOutlined,
+  EditOutlined,
+  Search,
+  VisibilityOffOutlined,
+  VisibilityOutlined,
+} from "@mui/icons-material";
 
 import { FStore } from "@/firebase/firebase.config";
 import { EmptyState, PageHeader, Skeleton } from "@/app/components/ui";
@@ -47,7 +68,9 @@ function ProductsList() {
   const status = (searchParams.get("status") as StatusFilter) || "all";
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -59,7 +82,9 @@ function ProductsList() {
       (snapshot) => {
         setProducts(
           snapshot.docs
-            .map((productDoc) => normalizeProduct(productDoc.id, productDoc.data()))
+            .map((productDoc) =>
+              normalizeProduct(productDoc.id, productDoc.data()),
+            )
             .sort((a, b) => b.createdAt - a.createdAt),
         );
         setLoading(false);
@@ -71,14 +96,19 @@ function ProductsList() {
       },
     );
 
-    const unsubCategories = onSnapshot(collection(FStore, "categories"), (snapshot) => {
-      const names: Record<string, string> = {};
-      snapshot.docs.forEach((categoryDoc) => {
-        const data = categoryDoc.data();
-        names[toSlug(String(data.slug ?? categoryDoc.id))] = String(data.name ?? categoryDoc.id);
-      });
-      setCategoryNames(names);
-    });
+    const unsubCategories = onSnapshot(
+      collection(FStore, "categories"),
+      (snapshot) => {
+        const names: Record<string, string> = {};
+        snapshot.docs.forEach((categoryDoc) => {
+          const data = categoryDoc.data();
+          names[toSlug(String(data.slug ?? categoryDoc.id))] = String(
+            data.name ?? categoryDoc.id,
+          );
+        });
+        setCategoryNames(names);
+      },
+    );
 
     return () => {
       unsubProducts();
@@ -90,12 +120,16 @@ function ProductsList() {
     const params = new URLSearchParams(searchParams.toString());
     if (value && value !== "all") params.set(key, value);
     else params.delete(key);
-    router.replace(`${pathname}${params.size ? `?${params}` : ""}`, { scroll: false });
+    router.replace(`${pathname}${params.size ? `?${params}` : ""}`, {
+      scroll: false,
+    });
   };
 
   const categoriesInUse = useMemo(() => {
     const counts = new Map<string, number>();
-    products.forEach((product) => counts.set(product.category, (counts.get(product.category) ?? 0) + 1));
+    products.forEach((product) =>
+      counts.set(product.category, (counts.get(product.category) ?? 0) + 1),
+    );
     return Array.from(counts.entries()).sort((a, b) =>
       (categoryNames[a[0]] ?? a[0]).localeCompare(categoryNames[b[0]] ?? b[0]),
     );
@@ -108,9 +142,17 @@ function ProductsList() {
       if (category && product.category !== category) return false;
       if (status === "live" && !product.active) return false;
       if (status === "hidden" && product.active) return false;
-      if (status === "soldout" && !(product.sizes.length > 0 && totalStock(product) === 0)) return false;
+      if (
+        status === "soldout" &&
+        !(product.sizes.length > 0 && totalStock(product) === 0)
+      )
+        return false;
       if (status === "low" && !hasLowStock(product)) return false;
-      if (term && !`${product.title} ${product.subcategory}`.toLowerCase().includes(term)) return false;
+      if (
+        term &&
+        !`${product.title} ${product.subcategory}`.toLowerCase().includes(term)
+      )
+        return false;
       return true;
     });
   }, [products, category, status, search]);
@@ -122,7 +164,11 @@ function ProductsList() {
         active: !product.active,
         updatedAt: serverTimestamp(),
       });
-      toast.success(product.active ? `"${product.title}" hidden` : `"${product.title}" is live`);
+      toast.success(
+        product.active
+          ? `"${product.title}" hidden`
+          : `"${product.title}" is live`,
+      );
       void revalidateStore({ products: true, productIds: [product.id] });
     } catch (error) {
       console.error(error);
@@ -150,184 +196,360 @@ function ProductsList() {
 
   const label = (slug: string) => categoryNames[slug] ?? slugToLabel(slug);
 
+  const addButton = (
+    <Button
+      component={Link}
+      href="/admin/products/new"
+      variant="contained"
+      startIcon={<Add />}
+    >
+      Add product
+    </Button>
+  );
+
+  const badge = {
+    height: 22,
+    borderRadius: 1,
+    border: "1.5px solid",
+    fontSize: 11,
+  } as const;
+  const mutedBadge = {
+    ...badge,
+    borderColor: "var(--dc-line)",
+    color: "text.secondary",
+    bgcolor: "transparent",
+  } as const;
+
   return (
     <>
       <PageHeader
         eyebrow="Catalog"
         title={category ? label(category) : "Products"}
         description={
-          loading ? "Loading…" : `${filtered.length} of ${products.length} products`
+          loading
+            ? "Loading…"
+            : `${filtered.length} of ${products.length} products`
         }
-        actions={
-          <Link href="/admin/products/new" className="btn-brutal btn-primary btn-sm">
-            <FiPlus /> Add product
-          </Link>
-        }
+        actions={addButton}
       />
 
       {/* Filters */}
-      <div className="mb-5 space-y-3">
-        <div className="relative">
-          <FiSearch className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search products…"
-            aria-label="Search products"
-            className="dc-input pl-10"
-          />
-        </div>
+      <Stack spacing={1.5} sx={{ mb: 2.5 }}>
+        <TextField
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search products…"
+          fullWidth
+          slotProps={{
+            htmlInput: { "aria-label": "Search products" },
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
 
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <select
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          sx={{
+            mx: { xs: -2, sm: 0 },
+            px: { xs: 2, sm: 0 },
+            pb: 0.5,
+            overflowX: "auto",
+            flexWrap: { xs: "nowrap", sm: "wrap" },
+            alignItems: "center",
+          }}
+        >
+          <TextField
+            select
+            size="small"
             value={category}
             onChange={(event) => setParam("category", event.target.value)}
-            aria-label="Filter by category"
-            className="dc-input w-auto shrink-0 pr-8"
-            style={{ minHeight: 38 }}
+            sx={{ flexShrink: 0, minWidth: 180 }}
+            slotProps={{
+              select: { displayEmpty: true },
+              htmlInput: { "aria-label": "Filter by category" },
+            }}
           >
-            <option value="">All categories</option>
+            <MenuItem value="">All categories</MenuItem>
             {categoriesInUse.map(([slug, count]) => (
-              <option key={slug} value={slug}>
+              <MenuItem key={slug} value={slug}>
                 {label(slug)} ({count})
-              </option>
+              </MenuItem>
             ))}
-          </select>
+          </TextField>
 
           {STATUS_FILTERS.map((filter) => {
             const active = status === filter.key;
             return (
-              <button
+              <Chip
                 key={filter.key}
-                type="button"
+                label={filter.label}
+                clickable
                 onClick={() => setParam("status", filter.key)}
                 aria-pressed={active}
-                className="btn shrink-0"
-                style={
-                  active
-                    ? { background: "var(--dc-text)", color: "var(--dc-bg)", borderColor: "var(--dc-text)", minHeight: 38 }
-                    : { minHeight: 38 }
-                }
-              >
-                {filter.label}
-              </button>
+                sx={{
+                  flexShrink: 0,
+                  height: 38,
+                  px: 0.5,
+                  borderRadius: 2,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  letterSpacing: 0,
+                  border: "1.5px solid",
+                  ...(active
+                    ? {
+                        bgcolor: "var(--dc-text)",
+                        color: "var(--dc-bg)",
+                        borderColor: "var(--dc-text)",
+                        "&:hover": { bgcolor: "var(--dc-text)" },
+                      }
+                    : {
+                        bgcolor: "var(--dc-surface)",
+                        borderColor: "var(--dc-line)",
+                        "&:hover": {
+                          bgcolor: "var(--dc-surface)",
+                          borderColor: "var(--dc-edge)",
+                        },
+                      }),
+                }}
+              />
             );
           })}
-        </div>
-      </div>
+        </Stack>
+      </Stack>
 
       {loading ? (
-        <div className="space-y-3">
+        <Stack spacing={1.5}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24" />
           ))}
-        </div>
+        </Stack>
       ) : products.length === 0 ? (
         <EmptyState
           title="No products yet"
           description="Add your first drop — it goes live in the store as soon as you save."
-          action={
-            <Link href="/admin/products/new" className="btn-brutal btn-primary btn-sm">
-              <FiPlus /> Add product
-            </Link>
-          }
+          action={addButton}
         />
       ) : filtered.length === 0 ? (
-        <EmptyState title="Nothing matches" description="Try a different search or filter." />
+        <EmptyState
+          title="Nothing matches"
+          description="Try a different search or filter."
+        />
       ) : (
-        <ul className="space-y-3">
+        <Stack
+          component="ul"
+          spacing={1.5}
+          sx={{ m: 0, p: 0, listStyle: "none" }}
+        >
           {filtered.map((product) => {
             const stock = totalStock(product);
             const soldOut = product.sizes.length > 0 && stock === 0;
             const busy = busyId === product.id;
 
             return (
-              <li key={product.id} className="dc-card flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
-                <Link href={`/admin/products/${product.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+              <Card
+                component="li"
+                key={product.id}
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  alignItems: { sm: "center" },
+                  gap: 1.5,
+                  p: 1.5,
+                }}
+              >
+                <MuiLink
+                  component={Link}
+                  href={`/admin/products/${product.id}`}
+                  color="inherit"
+                  underline="none"
+                  sx={{
+                    display: "flex",
+                    minWidth: 0,
+                    flex: 1,
+                    alignItems: "center",
+                    gap: 1.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 64,
+                      height: 80,
+                      flexShrink: 0,
+                      overflow: "hidden",
+                      borderRadius: 2,
+                      bgcolor: "var(--dc-surface-2)",
+                    }}
+                  >
                     {product.images[0] && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Box
+                        component="img"
                         src={imageUrl(product.images[0], 160, "4:5")}
                         alt=""
                         loading="lazy"
-                        className="h-full w-full object-contain"
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
                       />
                     )}
-                  </div>
+                  </Box>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">{product.title || "Untitled"}</p>
-                    <p className="text-sm text-muted">
-                      ₹{product.price.toLocaleString("en-IN")} · {label(product.category)}
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography noWrap sx={{ fontWeight: 700 }}>
+                      {product.title || "Untitled"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ₹{product.price.toLocaleString("en-IN")} ·{" "}
+                      {label(product.category)}
                       {product.subcategory && ` · ${product.subcategory}`}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      <span className={`dc-badge ${product.active ? "dc-badge-live" : "dc-badge-muted"}`}>
-                        {product.active ? "Live" : "Hidden"}
-                      </span>
-                      {soldOut ? (
-                        <span className="dc-badge dc-badge-ink">Sold out</span>
-                      ) : product.sizes.length > 0 ? (
-                        <span className={`dc-badge ${hasLowStock(product) ? "dc-badge-outline" : "dc-badge-muted"}`}>
-                          {stock} in stock
-                        </span>
-                      ) : null}
-                      {product.featured && <span className="dc-badge dc-badge-ink">Featured</span>}
-                      {product.images.some((image) => !image.publicId) && (
-                        <span className="dc-badge dc-badge-muted" title="Image still on Firebase Storage">
-                          Legacy img
-                        </span>
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      useFlexGap
+                      spacing={0.75}
+                      sx={{ mt: 0.75, flexWrap: "wrap" }}
+                    >
+                      {product.active ? (
+                        <Chip
+                          size="small"
+                          label="Live"
+                          color="primary"
+                          sx={{ ...badge, borderColor: "var(--dc-ink)" }}
+                        />
+                      ) : (
+                        <Chip size="small" label="Hidden" sx={mutedBadge} />
                       )}
-                    </div>
-                  </div>
-                </Link>
+                      {soldOut ? (
+                        <Chip
+                          size="small"
+                          label="Sold out"
+                          color="secondary"
+                          sx={badge}
+                        />
+                      ) : product.sizes.length > 0 ? (
+                        <Chip
+                          size="small"
+                          label={`${stock} in stock`}
+                          sx={
+                            hasLowStock(product)
+                              ? {
+                                  ...badge,
+                                  borderColor: "var(--dc-edge)",
+                                  bgcolor: "transparent",
+                                }
+                              : mutedBadge
+                          }
+                        />
+                      ) : null}
+                      {product.featured && (
+                        <Chip
+                          size="small"
+                          label="Featured"
+                          color="secondary"
+                          sx={badge}
+                        />
+                      )}
+                      {product.images.some((image) => !image.publicId) && (
+                        <Tooltip title="Image still on Firebase Storage">
+                          <Chip
+                            size="small"
+                            label="Legacy img"
+                            sx={mutedBadge}
+                          />
+                        </Tooltip>
+                      )}
+                    </Stack>
+                  </Box>
+                </MuiLink>
 
-                <div className="flex shrink-0 gap-2 border-t border-line pt-3 sm:border-0 sm:pt-0">
-                  <Link href={`/admin/products/${product.id}`} className="btn flex-1 sm:flex-none">
-                    <FiEdit2 /> Edit
-                  </Link>
-                  <button
-                    type="button"
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    flexShrink: 0,
+                    borderTop: { xs: "1px solid var(--dc-line)", sm: 0 },
+                    pt: { xs: 1.5, sm: 0 },
+                  }}
+                >
+                  <Button
+                    component={Link}
+                    href={`/admin/products/${product.id}`}
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditOutlined />}
+                    sx={{ flex: { xs: 1, sm: "none" } }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
                     disabled={busy}
                     onClick={() => toggleActive(product)}
-                    className="btn flex-1 sm:flex-none"
-                    aria-label={product.active ? `Hide ${product.title}` : `Show ${product.title}`}
+                    aria-label={
+                      product.active
+                        ? `Hide ${product.title}`
+                        : `Show ${product.title}`
+                    }
+                    startIcon={
+                      product.active ? (
+                        <VisibilityOffOutlined />
+                      ) : (
+                        <VisibilityOutlined />
+                      )
+                    }
+                    sx={{ flex: { xs: 1, sm: "none" } }}
                   >
-                    {product.active ? <FiEyeOff /> : <FiEye />}
                     {product.active ? "Hide" : "Show"}
-                  </button>
+                  </Button>
                   {confirmId === product.id ? (
                     <>
-                      <button
-                        type="button"
+                      <Button
+                        variant="contained"
+                        color="error"
+                        size="small"
                         disabled={busy}
                         onClick={() => handleDelete(product)}
-                        className="btn flex-1 sm:flex-none"
-                        style={{ background: "var(--dc-danger)", color: "#fff", borderColor: "var(--dc-danger)" }}
+                        sx={{ flex: { xs: 1, sm: "none" }, color: "#fff" }}
                       >
                         {busy ? "Deleting…" : "Confirm"}
-                      </button>
-                      <button type="button" onClick={() => setConfirmId(null)} className="btn btn-ghost">
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() => setConfirmId(null)}
+                      >
                         Cancel
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
-                      type="button"
+                    <IconButton
                       onClick={() => setConfirmId(product.id)}
-                      className="btn btn-danger-soft"
                       aria-label={`Delete ${product.title}`}
+                      sx={{
+                        color: "error.main",
+                        border: "1.5px solid var(--dc-line)",
+                        "&:hover": { borderColor: "error.main" },
+                      }}
                     >
-                      <FiTrash2 />
-                    </button>
+                      <DeleteOutlined fontSize="small" />
+                    </IconButton>
                   )}
-                </div>
-              </li>
+                </Stack>
+              </Card>
             );
           })}
-        </ul>
+        </Stack>
       )}
     </>
   );
